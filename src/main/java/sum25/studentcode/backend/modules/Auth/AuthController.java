@@ -25,7 +25,7 @@ public class AuthController {
     private final JwtUtils jwtUtils;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
         // Register new user
         User user = userService.register(request);
 
@@ -44,17 +44,16 @@ public class AuthController {
         UserResponse userResponse = userService.getUserByUsername(request.getUsername());
 
         // Build response
-        AuthResponse response = AuthResponse.builder()
+
+        return AuthResponse.builder()
                 .token(jwt)
                 .user(userResponse)
                 .message("User registered successfully")
                 .build();
-
-        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         // Authenticate user
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -73,18 +72,16 @@ public class AuthController {
         UserResponse userResponse = userService.getUserByUsername(request.getUsername());
 
         // Build response
-        AuthResponse response = AuthResponse.builder()
+
+        return AuthResponse.builder()
                 .token(jwt)
                 .user(userResponse)
                 .message("Login successful")
                 .build();
-
-        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getCurrentUser() {
-        UserResponse userResponse = userService.getCurrentUserResponse();
-        return ResponseEntity.ok(userResponse);
+    public UserResponse getCurrentUser() {
+        return userService.getCurrentUserResponse();
     }
 }
