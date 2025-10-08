@@ -1,4 +1,4 @@
-package sum25.studentcode.backend.modules.Auth.controller;
+package sum25.studentcode.backend.modules.Auth;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
