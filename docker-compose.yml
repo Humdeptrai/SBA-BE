@@ -5,7 +5,7 @@ services:
     container_name: sba-mysql
     environment:
       MYSQL_ROOT_PASSWORD: 12345
-      MYSQL_DATABASE: login
+      MYSQL_DATABASE: SBA
     ports:
       - "3306:3306"
     volumes:
