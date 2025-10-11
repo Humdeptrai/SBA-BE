@@ -4,12 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import sum25.studentcode.backend.model.Grade;
 import sum25.studentcode.backend.model.Lesson;
-import sum25.studentcode.backend.model.Subject;
 import sum25.studentcode.backend.modules.Grade.repository.GradeRepository;
 import sum25.studentcode.backend.modules.Lesson.dto.request.LessonRequest;
 import sum25.studentcode.backend.modules.Lesson.dto.response.LessonResponse;
 import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
-import sum25.studentcode.backend.modules.Subject.repository.SubjectRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,20 +18,16 @@ public class LessonServiceImpl implements LessonService {
 
     private final LessonRepository lessonRepository;
     private final GradeRepository gradeRepository;
-    private final SubjectRepository subjectRepository;
 
     @Override
     public LessonResponse createLesson(LessonRequest request) {
         Grade grade = gradeRepository.findById(request.getGradeId())
                 .orElseThrow(() -> new RuntimeException("Grade not found"));
-        Subject subject = subjectRepository.findById(request.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
         Lesson lesson = Lesson.builder()
                 .grade(grade)
                 .lessonTitle(request.getLessonTitle())
                 .lessonContent(request.getLessonContent())
                 .lessonObjectives(request.getLessonObjectives())
-                .subject(subject)
                 .build();
         lesson = lessonRepository.save(lesson);
         return convertToResponse(lesson);
@@ -59,13 +53,10 @@ public class LessonServiceImpl implements LessonService {
                 .orElseThrow(() -> new RuntimeException("Lesson not found"));
         Grade grade = gradeRepository.findById(request.getGradeId())
                 .orElseThrow(() -> new RuntimeException("Grade not found"));
-        Subject subject = subjectRepository.findById(request.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
         lesson.setGrade(grade);
         lesson.setLessonTitle(request.getLessonTitle());
         lesson.setLessonContent(request.getLessonContent());
         lesson.setLessonObjectives(request.getLessonObjectives());
-        lesson.setSubject(subject);
         lesson = lessonRepository.save(lesson);
         return convertToResponse(lesson);
     }
@@ -85,7 +76,6 @@ public class LessonServiceImpl implements LessonService {
         response.setLessonTitle(lesson.getLessonTitle());
         response.setLessonContent(lesson.getLessonContent());
         response.setLessonObjectives(lesson.getLessonObjectives());
-        response.setSubjectId(lesson.getSubject().getSubjectId());
         response.setCreatedAt(lesson.getCreatedAt());
         response.setUpdatedAt(lesson.getUpdatedAt());
         return response;

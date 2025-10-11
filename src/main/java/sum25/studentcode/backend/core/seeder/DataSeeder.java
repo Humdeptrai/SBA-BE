@@ -16,7 +16,6 @@ import sum25.studentcode.backend.modules.QuestionType.repository.QuestionTypeRep
 import sum25.studentcode.backend.modules.Questions.repository.QuestionsRepository;
 import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
 import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
-import sum25.studentcode.backend.modules.Subject.repository.SubjectRepository;
 import sum25.studentcode.backend.modules.TeacherMatrix.repository.TeacherMatrixRepository;
 import sum25.studentcode.backend.modules.Transaction.repository.TransactionRepository;
 import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
@@ -29,7 +28,6 @@ import java.time.LocalDateTime;
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
-    private final SubjectRepository subjectRepository;
     private final GradeRepository gradeRepository;
     private final LevelRepository levelRepository;
     private final QuestionTypeRepository questionTypeRepository;
@@ -62,25 +60,6 @@ public class DataSeeder implements CommandLineRunner {
                     .role(Role.STUDENT)
                     .build();
             userRepository.save(student);
-        }
-
-        // Seed subjects
-        if (subjectRepository.count() == 0) {
-            Subject math = Subject.builder()
-                    .subjectName("Mathematics")
-                    .subjectCode("MATH101")
-                    .creditId(3)
-                    .syllabus("Basic mathematics syllabus")
-                    .build();
-            subjectRepository.save(math);
-
-            Subject physics = Subject.builder()
-                    .subjectName("Physics")
-                    .subjectCode("PHYS101")
-                    .creditId(4)
-                    .syllabus("Basic physics syllabus")
-                    .build();
-            subjectRepository.save(physics);
         }
 
         // Seed grades
@@ -134,15 +113,11 @@ public class DataSeeder implements CommandLineRunner {
 
         // Seed exams (depends on subjects)
         if (examRepository.count() == 0) {
-            Subject math = subjectRepository.findAll().stream()
-                    .filter(s -> "MATH101".equals(s.getSubjectCode()))
-                    .findFirst().orElseThrow();
             Exam mathExam = Exam.builder()
                     .examName("Math Exam 1")
                     .description("First math exam")
                     .durationMinutes(60)
                     .examDate(LocalDateTime.now().plusDays(7))
-                    .subject(math)
                     .build();
             examRepository.save(mathExam);
         }
@@ -161,9 +136,6 @@ public class DataSeeder implements CommandLineRunner {
 
         // Seed questions (depends on subjects, levels, questionTypes)
         if (questionsRepository.count() == 0) {
-            Subject math = subjectRepository.findAll().stream()
-                    .filter(s -> "MATH101".equals(s.getSubjectCode()))
-                    .findFirst().orElseThrow();
             Level easy = levelRepository.findAll().stream()
                     .filter(l -> "Easy".equals(l.getLevelName()))
                     .findFirst().orElseThrow();
@@ -174,8 +146,6 @@ public class DataSeeder implements CommandLineRunner {
             Questions question = Questions.builder()
                     .questionText("What is 2 + 2?")
                     .correctAnswer("4")
-                    .subject(math)
-                    .level(easy)
                     .questionType(mc)
                     .build();
             questionsRepository.save(question);

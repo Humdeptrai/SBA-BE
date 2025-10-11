@@ -44,10 +44,6 @@ public class Exam {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subject_id", referencedColumnName = "subject_id")
-    private Subject subject;
-
     @OneToMany(mappedBy = "exam", fetch = FetchType.LAZY)
     private List<PracticeSession> practiceSessions = new ArrayList<>();
 }
