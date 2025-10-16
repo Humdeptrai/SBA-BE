@@ -15,11 +15,6 @@ public class WalletController {
 
     private final WalletService walletService;
 
-    @PostMapping
-    public WalletResponse createWallet(@RequestBody WalletRequest request) {
-        return walletService.createWallet(request);
-    }
-
     @GetMapping("/{id}")
     public WalletResponse getWalletById(@PathVariable Long id) {
         return walletService.getWalletById(id);
@@ -30,13 +25,4 @@ public class WalletController {
         return walletService.getAllWallets();
     }
 
-    @PutMapping("/{id}")
-    public WalletResponse updateWallet(@PathVariable Long id, @RequestBody WalletRequest request) {
-        return walletService.updateWallet(id, request);
-    }
-
-    @DeleteMapping("/{id}")
-    public void deleteWallet(@PathVariable Long id) {
-        walletService.deleteWallet(id);
-    }
 }

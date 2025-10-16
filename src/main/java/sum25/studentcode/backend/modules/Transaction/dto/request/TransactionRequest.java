@@ -1,20 +1,25 @@
 package sum25.studentcode.backend.modules.Transaction.dto.request;
 
-import lombok.Data;
+import lombok.*;
+import sum25.studentcode.backend.model.Transaction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TransactionRequest {
     private Long walletId;
     private Long userId;
-    private String transactionType;
+    private Long orderId; // có thể null nếu không liên kết đơn hàng
+    private Transaction.TransactionType transactionType; // DEPOSIT, USAGE, REFUND
     private BigDecimal amount;
     private BigDecimal balanceBefore;
     private BigDecimal balanceAfter;
     private String description;
-    private String referenceId;
-    private String status;
-    private LocalDateTime transactionDate;
+    private Transaction.TransactionStatus status; // SUCCESS, FAILED
+    private String externalReferenceId; // ID giao dịch PayPal/MoMo/Stripe...
 }

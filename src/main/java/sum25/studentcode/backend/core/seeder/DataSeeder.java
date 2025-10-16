@@ -262,23 +262,36 @@ public class DataSeeder implements CommandLineRunner {
 
         // Seed transactions (depends on wallets, users)
         if (transactionRepository.count() == 0) {
-            Wallet wallet = walletRepository.findAll().get(0);
+            // 1. Tìm User "student"
             User student = userRepository.findAll().stream()
                     .filter(u -> "student".equals(u.getUsername()))
-                    .findFirst().orElseThrow();
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("User 'student' not found for initialization.")); // Thêm thông báo lỗi rõ ràng
 
+            // 2. Tìm Ví (Wallet) của User đó
+            Wallet wallet = walletRepository.findByUser(student);
+
+            // 3. Tính toán số dư chính xác
+            BigDecimal currentBalance = wallet.getBalance(); // Số dư hiện tại (có thể là 0.0)
+            BigDecimal depositAmount = BigDecimal.valueOf(50.0);
+            BigDecimal newBalance = currentBalance.add(depositAmount);
+
+            // 4. Cập nhật số dư trong Ví trước khi tạo Transaction (Bắt buộc)
+            wallet.setBalance(newBalance);
+            walletRepository.save(wallet);
+
+            // 5. Tạo Transaction
             Transaction transaction = Transaction.builder()
                     .wallet(wallet)
                     .user(student)
-                    .transactionType("Deposit")
-                    .amount(BigDecimal.valueOf(50.0))
-                    .balanceBefore(BigDecimal.valueOf(50.0))
-                    .balanceAfter(BigDecimal.valueOf(100.0))
-                    .description("Initial deposit")
-                    .referenceId("REF001")
-                    .status("Completed")
-                    .transactionDate(LocalDateTime.now())
+                    .transactionType(Transaction.TransactionType.DEPOSIT)
+                    .amount(depositAmount)
+                    .balanceBefore(currentBalance)
+                    .balanceAfter(newBalance)
+                    .description("Initial deposit for testing")
+                    .status(Transaction.TransactionStatus.SUCCESS)
                     .build();
+
             transactionRepository.save(transaction);
         }
 

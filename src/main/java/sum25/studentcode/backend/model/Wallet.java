@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "wallet")
+@Table(name = "wallets")
 @Getter
 @Setter
 @NoArgsConstructor

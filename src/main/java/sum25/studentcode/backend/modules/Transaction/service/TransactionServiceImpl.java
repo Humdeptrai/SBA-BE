@@ -2,15 +2,18 @@ package sum25.studentcode.backend.modules.Transaction.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import sum25.studentcode.backend.model.Order;
 import sum25.studentcode.backend.model.Transaction;
 import sum25.studentcode.backend.model.User;
 import sum25.studentcode.backend.model.Wallet;
 import sum25.studentcode.backend.modules.Auth.repository.UserRepository;
+import sum25.studentcode.backend.modules.Payment.repository.OrderRepository;
 import sum25.studentcode.backend.modules.Transaction.dto.request.TransactionRequest;
 import sum25.studentcode.backend.modules.Transaction.dto.response.TransactionResponse;
 import sum25.studentcode.backend.modules.Transaction.repository.TransactionRepository;
 import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,6 +24,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     public TransactionResponse createTransaction(TransactionRequest request) {
@@ -28,18 +32,26 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Order order = null;
+        if (request.getOrderId() != null) {
+            order = orderRepository.findById(request.getOrderId())
+                    .orElse(null);
+        }
+
         Transaction transaction = Transaction.builder()
                 .wallet(wallet)
                 .user(user)
+                .order(order)
                 .transactionType(request.getTransactionType())
                 .amount(request.getAmount())
                 .balanceBefore(request.getBalanceBefore())
                 .balanceAfter(request.getBalanceAfter())
                 .description(request.getDescription())
-                .referenceId(request.getReferenceId())
                 .status(request.getStatus())
-                .transactionDate(request.getTransactionDate())
+                .externalReferenceId(request.getExternalReferenceId())
                 .build();
+
         transaction = transactionRepository.save(transaction);
         return convertToResponse(transaction);
     }
@@ -66,16 +78,23 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElseThrow(() -> new RuntimeException("Wallet not found"));
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Order order = null;
+        if (request.getOrderId() != null) {
+            order = orderRepository.findById(request.getOrderId()).orElse(null);
+        }
+
         transaction.setWallet(wallet);
         transaction.setUser(user);
+        transaction.setOrder(order);
         transaction.setTransactionType(request.getTransactionType());
         transaction.setAmount(request.getAmount());
         transaction.setBalanceBefore(request.getBalanceBefore());
         transaction.setBalanceAfter(request.getBalanceAfter());
         transaction.setDescription(request.getDescription());
-        transaction.setReferenceId(request.getReferenceId());
         transaction.setStatus(request.getStatus());
-        transaction.setTransactionDate(request.getTransactionDate());
+        transaction.setExternalReferenceId(request.getExternalReferenceId());
+
         transaction = transactionRepository.save(transaction);
         return convertToResponse(transaction);
     }
@@ -88,21 +107,39 @@ public class TransactionServiceImpl implements TransactionService {
         transactionRepository.deleteById(id);
     }
 
+    @Override
+    public Transaction createDepositTransaction(Wallet wallet, User user, BigDecimal amount,
+                                                BigDecimal before, BigDecimal after,
+                                                String externalReferenceId) {
+        Transaction txn = Transaction.builder()
+                .wallet(wallet)
+                .user(user)
+                .transactionType(Transaction.TransactionType.DEPOSIT)
+                .amount(amount)
+                .balanceBefore(before)
+                .balanceAfter(after)
+                .description("Nạp tiền qua PayPal")
+                .status(Transaction.TransactionStatus.SUCCESS)
+                .externalReferenceId(externalReferenceId)
+                .build();
+        return transactionRepository.save(txn);
+    }
+
     private TransactionResponse convertToResponse(Transaction transaction) {
-        TransactionResponse response = new TransactionResponse();
-        response.setTransactionId(transaction.getTransactionId());
-        response.setWalletId(transaction.getWallet().getWalletId());
-        response.setUserId(transaction.getUser().getUserId());
-        response.setTransactionType(transaction.getTransactionType());
-        response.setAmount(transaction.getAmount());
-        response.setBalanceBefore(transaction.getBalanceBefore());
-        response.setBalanceAfter(transaction.getBalanceAfter());
-        response.setDescription(transaction.getDescription());
-        response.setReferenceId(transaction.getReferenceId());
-        response.setStatus(transaction.getStatus());
-        response.setTransactionDate(transaction.getTransactionDate());
-        response.setCreatedAt(transaction.getCreatedAt());
-        response.setUpdatedAt(transaction.getUpdatedAt());
-        return response;
+        return TransactionResponse.builder()
+                .transactionId(transaction.getTransactionId())
+                .walletId(transaction.getWallet().getWalletId())
+                .userId(transaction.getUser().getUserId())
+                .orderId(transaction.getOrder() != null ? transaction.getOrder().getOrderId() : null)
+                .transactionType(transaction.getTransactionType())
+                .amount(transaction.getAmount())
+                .balanceBefore(transaction.getBalanceBefore())
+                .balanceAfter(transaction.getBalanceAfter())
+                .description(transaction.getDescription())
+                .status(transaction.getStatus())
+                .externalReferenceId(transaction.getExternalReferenceId())
+                .createdAt(transaction.getCreatedAt())
+                .updatedAt(transaction.getUpdatedAt())
+                .build();
     }
 }

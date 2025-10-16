@@ -11,11 +11,13 @@ import sum25.studentcode.backend.model.User;
 import sum25.studentcode.backend.modules.Auth.dto.request.RegisterRequest;
 import sum25.studentcode.backend.modules.Auth.dto.response.UserResponse;
 import sum25.studentcode.backend.modules.Auth.repository.UserRepository;
+import sum25.studentcode.backend.modules.Wallet.service.WalletService;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
+    private final WalletService walletService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -31,6 +33,8 @@ public class UserService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole() != null ? request.getRole() : Role.STUDENT)
                 .build();
+        // ✅ Tạo wallet mặc định cho user mới
+        walletService.initializeNewWallet(user);
 
         return userRepository.save(user);
     }

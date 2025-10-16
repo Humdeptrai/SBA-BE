@@ -1,43 +1,109 @@
 package sum25.studentcode.backend.modules.Wallet.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import sum25.studentcode.backend.model.User;
-import sum25.studentcode.backend.model.Wallet;
+import sum25.studentcode.backend.model.*;
 import sum25.studentcode.backend.modules.Auth.repository.UserRepository;
-import sum25.studentcode.backend.modules.Wallet.dto.request.WalletRequest;
 import sum25.studentcode.backend.modules.Wallet.dto.response.WalletResponse;
 import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
+import sum25.studentcode.backend.modules.Transaction.repository.TransactionRepository; // Import TransactionRepository
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
     private final UserRepository userRepository;
+    private final TransactionRepository transactionRepository; // Cần thiết để ghi sổ cái (Ledger)
 
+    // --- Các phương thức Khởi tạo và Truy vấn (READ Operations) ---
+
+    /**
+     * Khởi tạo Ví (Chỉ nên dùng nội bộ khi User đăng ký hoặc tạo thủ công bởi Admin).
+     */
     @Override
-    public WalletResponse createWallet(WalletRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    @Transactional
+    public WalletResponse initializeNewWallet(User user) {
+        if (walletRepository.findByUser(user) != null) {
+            throw new RuntimeException("Wallet already exists for user: " + user.getUserId());
+        }
+
         Wallet wallet = Wallet.builder()
                 .user(user)
-                .balance(request.getBalance())
-                .currency(request.getCurrency())
-                .isActive(request.getIsActive())
+                .balance(BigDecimal.ZERO)
+                .currency("VND")
+                .isActive(true)
                 .build();
+
         wallet = walletRepository.save(wallet);
+        log.info(" Initialized new wallet {} for user {}", wallet.getWalletId(), user.getUserId());
         return convertToResponse(wallet);
     }
 
     @Override
     public WalletResponse getWalletById(Long id) {
         Wallet wallet = walletRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new RuntimeException("Wallet not found with ID: " + id));
         return convertToResponse(wallet);
+    }
+    
+
+    @Override
+    @Transactional
+    public WalletResponse updateBalance(Long userId, BigDecimal amountToAdd) {
+        Wallet wallet = walletRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+
+        BigDecimal newBalance = wallet.getBalance().add(amountToAdd);
+        wallet.setBalance(newBalance);
+        walletRepository.save(wallet);
+        return convertToResponse(wallet);
+    }
+
+    @Override
+    public Wallet consumeCredit(Long userId, BigDecimal amountToDeduct) {
+        // 1. Lấy Wallet của người dùng
+        Wallet wallet = getWalletEntityByUserId(userId);
+
+        // 2. Kiểm tra amountToDeduct phải là số dương
+        if (amountToDeduct.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Amount to deduct must be a positive value.");
+        }
+
+        // 3. Kiểm tra số dư
+        BigDecimal currentBalance = wallet.getBalance();
+        if (currentBalance.compareTo(amountToDeduct) < 0) {
+            log.warn(" Insufficient balance for user {}. Current: {}, Deduct: {}", userId, currentBalance, amountToDeduct);
+            throw new RuntimeException("Insufficient balance to consume credit.");
+        }
+
+        // 4. Trừ Credit
+        BigDecimal newBalance = currentBalance.subtract(amountToDeduct);
+        wallet.setBalance(newBalance);
+        wallet.setUpdatedAt(LocalDateTime.now());
+        walletRepository.save(wallet);
+
+        log.info(" Credit consumed for user {}. Old balance: {}, New balance: {}", userId, currentBalance, newBalance);
+        return wallet;
+    }
+
+
+    // Dành cho xử lý nội bộ (PayPal, Momo, ...)
+    @Override
+    public Wallet getWalletEntityByUserId(Long userId) {
+        // Sửa lại để lấy ví theo userId, không phải walletId
+        return walletRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found"));
     }
 
     @Override
@@ -46,28 +112,82 @@ public class WalletServiceImpl implements WalletService {
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
+    
 
     @Override
+    public User getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+        return user;
+    }
+
+    // --- Chức năng LÕI: Thay đổi số dư (Deposit) ---
+
+    /**
+     * Nạp Credit vào Ví. Đây là phương thức duy nhất được phép thay đổi số dư.
+     * Mọi thay đổi số dư đều phải tạo một bản ghi Transaction.
+     * * @param user Đối tượng User
+     * @param amount Số tiền Credit nạp vào
+     * @param order Order liên quan (mua gói Credit)
+     * @param externalRefId Mã giao dịch từ cổng thanh toán (MoMo/VNPay)
+     * @return Bản ghi Transaction đã được tạo
+     */
+    @Override
+    @Transactional
+    public Transaction depositCredit(User user, BigDecimal amount, Order order, String externalRefId) {
+        Wallet wallet = walletRepository.findByUser(user);
+
+        BigDecimal balanceBefore = wallet.getBalance();
+        BigDecimal balanceAfter = balanceBefore.add(amount);
+
+        // 1. Cập nhật Wallet (luôn được bọc trong @Transactional)
+        wallet.setBalance(balanceAfter);
+        wallet.setUpdatedAt(LocalDateTime.now());
+        walletRepository.save(wallet);
+        log.info(" Wallet {} updated: {} -> {}", wallet.getWalletId(), balanceBefore, balanceAfter);
+
+        // 2. Tạo Transaction (Bằng chứng kế toán)
+        Transaction transaction = Transaction.builder()
+                .wallet(wallet)
+                .user(user)
+                .order(order)
+                .transactionType(Transaction.TransactionType.DEPOSIT)
+                .amount(amount)
+                .balanceBefore(balanceBefore)
+                .balanceAfter(balanceAfter)
+                .status(Transaction.TransactionStatus.SUCCESS)
+                .description("Nạp credit từ gói Pack #" + order.getRelatedEntityId())
+                .externalReferenceId(externalRefId)
+                .build();
+
+        return transactionRepository.save(transaction);
+    }
+
+
+    @Override
+    public void save(Wallet wallet) {
+        walletRepository.save(wallet);
+    }
+
+    // --- Các phương thức BỊ LOẠI BỎ vì rủi ro ---
+
+    /*
+    @Override
     public WalletResponse updateWallet(Long id, WalletRequest request) {
-        Wallet wallet = walletRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        wallet.setUser(user);
-        wallet.setBalance(request.getBalance());
-        wallet.setCurrency(request.getCurrency());
-        wallet.setIsActive(request.getIsActive());
-        wallet = walletRepository.save(wallet);
-        return convertToResponse(wallet);
+        // CHỨC NĂNG BỊ LOẠI BỎ: Không được phép cập nhật số dư trực tiếp.
+        // Thay vào đó, dùng depositCredit() hoặc withdrawCredit().
+        throw new UnsupportedOperationException("Direct wallet balance update is not allowed. Use depositCredit() or withdrawCredit() instead.");
     }
 
     @Override
     public void deleteWallet(Long id) {
-        if (!walletRepository.existsById(id)) {
-            throw new RuntimeException("Wallet not found");
-        }
-        walletRepository.deleteById(id);
+        // CHỨC NĂNG BỊ LOẠI BỎ: Không được xóa ví để bảo toàn dữ liệu.
+        // Thay vào đó, dùng updateIsActive(false) nếu cần ngừng sử dụng.
+        throw new UnsupportedOperationException("Direct wallet deletion is not allowed. Use updateIsActive(false) instead.");
     }
+    */
+
+    // --- Helper (Giữ nguyên) ---
 
     private WalletResponse convertToResponse(Wallet wallet) {
         WalletResponse response = new WalletResponse();

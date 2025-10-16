@@ -1,24 +1,26 @@
+package sum25.studentcode.backend.modules.Auth.dto.response;
 
-
+import lombok.Getter;
 import sum25.studentcode.backend.model.User; // Import your User Entity
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
+@Getter
 // Lombok annotations are often included here, but we will write the methods explicitly for clarity.
 public class UserDetailsImpl implements UserDetails {
-
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    private Long userId;
-    private String username;
-    private String password; // Stored hash for security checks
-    private Collection<? extends GrantedAuthority> authorities;
+    private final Long userId;
+    private final String username;
+    private final String password; // Stored hash for security checks
+    private final Collection<? extends GrantedAuthority> authorities;
 
     /**
      * Constructor for creating a UserDetailsImpl object from a User Entity.
@@ -36,10 +38,7 @@ public class UserDetailsImpl implements UserDetails {
 
     // --- Custom Getters ---
 
-    // IMPORTANT: Provide a getter for the custom primary key (userId)
-    public Long getUserId() {
-        return userId;
-    }
+
 
     // --- Implementation of UserDetails Interface ---
 

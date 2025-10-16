@@ -25,25 +25,30 @@ public class GlobalSuccessWrapper implements ResponseBodyAdvice<Object> {
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        String path = request.getRequestURI();
-
-        // Nếu có @SkipWrap ở method hoặc class => bỏ qua
+        // Bỏ qua các endpoint đặc biệt
+        String path = returnType.getExecutable().toString();
         return !returnType.hasMethodAnnotation(SkipWrap.class)
                 && !returnType.getDeclaringClass().isAnnotationPresent(SkipWrap.class)
                 && !returnType.getParameterType().equals(BaseResponse.class)
-                && !returnType.getParameterType().equals(ResponseEntity.class)
-
-                && !path.startsWith("/api/v3/api-docs")
-                && !path.startsWith("/api/swagger")
-                && !path.startsWith("/api/webjars");
+                && !returnType.getParameterType().equals(ResponseEntity.class);
     }
+
 
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
             Class<? extends HttpMessageConverter<?>> selectedConverterType,
             org.springframework.http.server.ServerHttpRequest req,
             org.springframework.http.server.ServerHttpResponse res) {
+        String path = req.getURI().getPath();
 
+
+        if (selectedContentType.equals(MediaType.APPLICATION_OCTET_STREAM)
+                || path.contains("/v3/api-docs")
+                || path.contains("/swagger")
+                || path.contains("/webjars")
+                || path.contains("/favicon")) {
+            return body;
+        }
         // Nếu là lỗi thì không động vào (đã handled ở GlobalExceptionHandler)
         if (body instanceof BaseResponse<?>)
             return body;

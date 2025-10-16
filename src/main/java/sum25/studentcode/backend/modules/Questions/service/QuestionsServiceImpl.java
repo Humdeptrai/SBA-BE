@@ -81,7 +81,6 @@ public class QuestionsServiceImpl implements QuestionsService {
         if (question.getLesson() != null) response.setLessonId(question.getLesson().getLessonId());
         if (question.getQuestionType() != null) response.setQuestionTypeId(question.getQuestionType().getQuestionTypeId());
         if (question.getLevel() != null) response.setLevelId(question.getLevel().getLevelId());
-        if (question.getSubject() != null) response.setSubjectId(question.getSubject().getSubjectId());
         return response;
     }
 }
