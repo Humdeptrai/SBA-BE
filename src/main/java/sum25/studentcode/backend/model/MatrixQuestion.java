@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "matrix_question")
+@Table(name = "matrix_questions")
 @Getter
 @Setter
 @NoArgsConstructor

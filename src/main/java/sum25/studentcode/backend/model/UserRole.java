@@ -8,7 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_role")
+@Table(name = "user_roles")
 @Getter
 @Setter
 @NoArgsConstructor

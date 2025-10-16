@@ -19,6 +19,9 @@ import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPract
 import sum25.studentcode.backend.modules.TeacherMatrix.repository.TeacherMatrixRepository;
 import sum25.studentcode.backend.modules.Transaction.repository.TransactionRepository;
 import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -46,17 +49,19 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // Seed users
+        PasswordEncoder encoder = new BCryptPasswordEncoder();
+
         if (userRepository.count() == 0) {
             User admin = User.builder()
                     .username("admin")
-                    .password("$2a$10$exampleHashedPassword") // Use BCryptPasswordEncoder to hash
+                    .password(encoder.encode("admin123")) // mã hóa thật
                     .role(Role.TEACHER)
                     .build();
             userRepository.save(admin);
 
             User student = User.builder()
                     .username("student")
-                    .password("$2a$10$exampleHashedPassword")
+                    .password(encoder.encode("student123")) // mã hóa thật
                     .role(Role.STUDENT)
                     .build();
             userRepository.save(student);

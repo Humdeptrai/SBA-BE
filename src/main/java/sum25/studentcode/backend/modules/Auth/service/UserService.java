@@ -48,8 +48,13 @@ public class UserService {
 
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
 
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication.getName().equals("anonymousUser")) {
+            throw new UsernameNotFoundException("No authenticated user found");
+        }
+
+        String username = authentication.getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
@@ -57,6 +62,11 @@ public class UserService {
     public UserResponse getCurrentUserResponse() {
         User user = getCurrentUser();
         return convertToUserResponse(user);
+    }
+
+    public User getUserEntityByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
     private UserResponse convertToUserResponse(User user) {

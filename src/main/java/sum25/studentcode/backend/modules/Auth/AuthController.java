@@ -54,7 +54,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-        // Authenticate user
+        // 1. Xác thực username/password
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
@@ -62,16 +62,14 @@ public class AuthController {
                 )
         );
 
-        // Get user from database
-        User user = userService.getCurrentUser();
+        // 2. Lấy user trực tiếp từ database, KHÔNG gọi getCurrentUser()
+        User user = userService.getUserEntityByUsername(request.getUsername());
 
-        // Generate JWT token
+        // 3. Tạo JWT token
         String jwt = jwtUtils.generateToken(user);
 
-        // Get user response
+        // 4. Lấy thông tin trả về
         UserResponse userResponse = userService.getUserByUsername(request.getUsername());
-
-        // Build response
 
         return AuthResponse.builder()
                 .token(jwt)

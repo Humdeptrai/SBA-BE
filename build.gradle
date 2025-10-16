@@ -41,6 +41,8 @@
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
         implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
 
+        implementation 'org.postgresql:postgresql:42.6.0'
+
         implementation 'com.paypal.sdk:rest-api-sdk:1.14.0'
 
 
