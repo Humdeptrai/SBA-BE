@@ -10,5 +10,4 @@ public class QuestionsRequest {
     private String questionText;
     private String correctAnswer;
     private String explanation;
-    private Long subjectId;
 }

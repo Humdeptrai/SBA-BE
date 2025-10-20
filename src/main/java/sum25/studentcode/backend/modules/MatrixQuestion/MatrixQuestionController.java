@@ -16,8 +16,8 @@ public class MatrixQuestionController {
     private final MatrixQuestionService matrixQuestionService;
 
     @PostMapping
-    public MatrixQuestionResponse createMatrixQuestion(@RequestBody MatrixQuestionRequest request) {
-        return matrixQuestionService.createMatrixQuestion(request);
+    public List<MatrixQuestionResponse> addQuestionsToMatrix(@RequestBody MatrixQuestionRequest request) {
+        return matrixQuestionService.addQuestionsToMatrix(request);
     }
 
     @GetMapping("/{id}")

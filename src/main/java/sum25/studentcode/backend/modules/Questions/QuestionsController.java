@@ -2,6 +2,7 @@ package sum25.studentcode.backend.modules.Questions;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import sum25.studentcode.backend.modules.Options.dto.response.OptionsResponse;
 import sum25.studentcode.backend.modules.Questions.dto.request.QuestionsRequest;
 import sum25.studentcode.backend.modules.Questions.dto.response.QuestionsResponse;
 import sum25.studentcode.backend.modules.Questions.service.QuestionsService;
@@ -38,5 +39,11 @@ public class QuestionsController {
     @DeleteMapping("/{id}")
     public void deleteQuestion(@PathVariable Long id) {
         questionsService.deleteQuestion(id);
+    }
+
+    // ✅ Lấy tất cả đáp án (options) của 1 câu hỏi
+    @GetMapping("/{questionId}/options")
+    public List<OptionsResponse> getOptionsByQuestionId(@PathVariable Long questionId) {
+        return questionsService.getOptionsByQuestionId(questionId);
     }
 }

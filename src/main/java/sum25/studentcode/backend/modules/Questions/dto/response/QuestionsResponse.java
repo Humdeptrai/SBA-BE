@@ -13,7 +13,6 @@ public class QuestionsResponse {
     private String questionText;
     private String correctAnswer;
     private String explanation;
-    private Long subjectId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

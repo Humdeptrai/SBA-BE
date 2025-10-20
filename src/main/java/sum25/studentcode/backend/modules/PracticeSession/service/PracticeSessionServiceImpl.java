@@ -26,13 +26,10 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
     public PracticeSessionResponse createPracticeSession(PracticeSessionRequest request) {
         Exam exam = examRepository.findById(request.getExamId())
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
-        User student = userRepository.findById(request.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Student not found"));
         User teacher = userRepository.findById(request.getTeacherId())
                 .orElseThrow(() -> new RuntimeException("Teacher not found"));
         PracticeSession practiceSession = PracticeSession.builder()
                 .exam(exam)
-                .student(student)
                 .sessionCode(request.getSessionCode())
                 .teacher(teacher)
                 .sessionName(request.getSessionName())
@@ -65,12 +62,9 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
                 .orElseThrow(() -> new RuntimeException("PracticeSession not found"));
         Exam exam = examRepository.findById(request.getExamId())
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
-        User student = userRepository.findById(request.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Student not found"));
         User teacher = userRepository.findById(request.getTeacherId())
                 .orElseThrow(() -> new RuntimeException("Teacher not found"));
         practiceSession.setExam(exam);
-        practiceSession.setStudent(student);
         practiceSession.setSessionCode(request.getSessionCode());
         practiceSession.setTeacher(teacher);
         practiceSession.setSessionName(request.getSessionName());
@@ -94,7 +88,6 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         PracticeSessionResponse response = new PracticeSessionResponse();
         response.setSessionId(practiceSession.getSessionId());
         response.setExamId(practiceSession.getExam().getExamId());
-        response.setStudentId(practiceSession.getStudent().getUserId());
         response.setSessionCode(practiceSession.getSessionCode());
         response.setTeacherId(practiceSession.getTeacher().getUserId());
         response.setSessionName(practiceSession.getSessionName());

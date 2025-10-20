@@ -6,7 +6,7 @@ import sum25.studentcode.backend.modules.MatrixQuestion.dto.response.MatrixQuest
 import java.util.List;
 
 public interface MatrixQuestionService {
-    MatrixQuestionResponse createMatrixQuestion(MatrixQuestionRequest request);
+    List<MatrixQuestionResponse> addQuestionsToMatrix(MatrixQuestionRequest request);
     MatrixQuestionResponse getMatrixQuestionById(Long id);
     List<MatrixQuestionResponse> getAllMatrixQuestions();
     MatrixQuestionResponse updateMatrixQuestion(Long id, MatrixQuestionRequest request);

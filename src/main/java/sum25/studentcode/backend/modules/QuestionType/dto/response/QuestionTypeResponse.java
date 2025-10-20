@@ -1,11 +1,15 @@
 package sum25.studentcode.backend.modules.QuestionType.dto.response;
 
-import lombok.Data;
-
+import lombok.*;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class QuestionTypeResponse {
+
     private Long questionTypeId;
     private String typeName;
     private String description;

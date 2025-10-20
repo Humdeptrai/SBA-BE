@@ -11,6 +11,8 @@ import sum25.studentcode.backend.modules.StudentAnswers.dto.response.StudentAnsw
 import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
 import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,18 +26,43 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
 
     @Override
     public StudentAnswersResponse createStudentAnswer(StudentAnswersRequest request) {
+        // 1️⃣ Kiểm tra tồn tại
         StudentPractice studentPractice = studentPracticeRepository.findById(request.getPracticeId())
                 .orElseThrow(() -> new RuntimeException("StudentPractice not found"));
         Questions question = questionsRepository.findById(request.getQuestionId())
                 .orElseThrow(() -> new RuntimeException("Question not found"));
+
+        // 2️⃣ Lấy đáp án đúng
+        String correctAnswer = question.getCorrectAnswer();
+        boolean isCorrect = false;
+
+        // 3️⃣ Kiểm tra loại câu hỏi (multiple choice)
+        if (question.getQuestionType() != null &&
+                "Multiple Choice".equalsIgnoreCase(question.getQuestionType().getTypeName())) {
+            // So sánh đáp án đúng với selectedOptionId
+            // (ở đây ta chỉ so sánh theo text nếu cần thiết, hoặc qua options table)
+            Long correctOptionId = question.getOptions()
+                    .stream()
+                    .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
+                    .map(opt -> opt.getOptionId())
+                    .findFirst()
+                    .orElse(null);
+            isCorrect = correctOptionId != null && correctOptionId.equals(request.getSelectedOptionId());
+        }
+
+        // 4️⃣ Tự tính điểm nếu đúng
+        BigDecimal marksEarned = isCorrect ? BigDecimal.valueOf(10) : BigDecimal.ZERO;
+
+        // 5️⃣ Tạo bản ghi StudentAnswer
         StudentAnswers studentAnswer = StudentAnswers.builder()
                 .studentPractice(studentPractice)
                 .question(question)
                 .selectedOptionId(request.getSelectedOptionId())
-                .isCorrect(request.getIsCorrect())
-                .marksEarned(request.getMarksEarned())
-                .answeredAt(request.getAnsweredAt())
+                .isCorrect(isCorrect)
+                .marksEarned(marksEarned)
+                .answeredAt(LocalDateTime.now())
                 .build();
+
         studentAnswer = studentAnswersRepository.save(studentAnswer);
         return convertToResponse(studentAnswer);
     }
@@ -56,20 +83,32 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
 
     @Override
     public StudentAnswersResponse updateStudentAnswer(Long id, StudentAnswersRequest request) {
-        StudentAnswers studentAnswer = studentAnswersRepository.findById(id)
+        StudentAnswers existing = studentAnswersRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("StudentAnswer not found"));
-        StudentPractice studentPractice = studentPracticeRepository.findById(request.getPracticeId())
-                .orElseThrow(() -> new RuntimeException("StudentPractice not found"));
+
         Questions question = questionsRepository.findById(request.getQuestionId())
                 .orElseThrow(() -> new RuntimeException("Question not found"));
-        studentAnswer.setStudentPractice(studentPractice);
-        studentAnswer.setQuestion(question);
-        studentAnswer.setSelectedOptionId(request.getSelectedOptionId());
-        studentAnswer.setIsCorrect(request.getIsCorrect());
-        studentAnswer.setMarksEarned(request.getMarksEarned());
-        studentAnswer.setAnsweredAt(request.getAnsweredAt());
-        studentAnswer = studentAnswersRepository.save(studentAnswer);
-        return convertToResponse(studentAnswer);
+
+        boolean isCorrect = false;
+        if (question.getQuestionType() != null &&
+                "Multiple Choice".equalsIgnoreCase(question.getQuestionType().getTypeName())) {
+            Long correctOptionId = question.getOptions()
+                    .stream()
+                    .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
+                    .map(opt -> opt.getOptionId())
+                    .findFirst()
+                    .orElse(null);
+            isCorrect = correctOptionId != null && correctOptionId.equals(request.getSelectedOptionId());
+        }
+
+        existing.setQuestion(question);
+        existing.setSelectedOptionId(request.getSelectedOptionId());
+        existing.setIsCorrect(isCorrect);
+        existing.setMarksEarned(isCorrect ? BigDecimal.valueOf(10) : BigDecimal.ZERO);
+        existing.setAnsweredAt(LocalDateTime.now());
+
+        studentAnswersRepository.save(existing);
+        return convertToResponse(existing);
     }
 
     @Override
@@ -80,15 +119,15 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
         studentAnswersRepository.deleteById(id);
     }
 
-    private StudentAnswersResponse convertToResponse(StudentAnswers studentAnswer) {
+    private StudentAnswersResponse convertToResponse(StudentAnswers entity) {
         StudentAnswersResponse response = new StudentAnswersResponse();
-        response.setAnswerId(studentAnswer.getAnswerId());
-        response.setPracticeId(studentAnswer.getStudentPractice().getPracticeId());
-        response.setQuestionId(studentAnswer.getQuestion().getQuestionId());
-        response.setSelectedOptionId(studentAnswer.getSelectedOptionId());
-        response.setIsCorrect(studentAnswer.getIsCorrect());
-        response.setMarksEarned(studentAnswer.getMarksEarned());
-        response.setAnsweredAt(studentAnswer.getAnsweredAt());
+        response.setAnswerId(entity.getAnswerId());
+        response.setPracticeId(entity.getStudentPractice().getPracticeId());
+        response.setQuestionId(entity.getQuestion().getQuestionId());
+        response.setSelectedOptionId(entity.getSelectedOptionId());
+        response.setIsCorrect(entity.getIsCorrect());
+        response.setMarksEarned(entity.getMarksEarned());
+        response.setAnsweredAt(entity.getAnsweredAt());
         return response;
     }
 }

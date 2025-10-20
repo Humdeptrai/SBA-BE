@@ -27,6 +27,9 @@ public class Exam {
     @Column(name = "exam_name")
     private String examName;
 
+    @Column(name = "exam_code", nullable = false, unique = true, length = 50)
+    private String examCode;
+
     @Lob
     private String description;
 
@@ -35,6 +38,9 @@ public class Exam {
 
     @Column(name = "exam_date")
     private LocalDateTime examDate;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -46,4 +52,6 @@ public class Exam {
 
     @OneToMany(mappedBy = "exam", fetch = FetchType.LAZY)
     private List<PracticeSession> practiceSessions = new ArrayList<>();
+
+
 }

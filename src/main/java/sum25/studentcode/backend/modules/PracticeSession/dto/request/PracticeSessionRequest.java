@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 @Data
 public class PracticeSessionRequest {
     private Long examId;
-    private Long studentId;
     private String sessionCode;
     private Long teacherId;
     private String sessionName;

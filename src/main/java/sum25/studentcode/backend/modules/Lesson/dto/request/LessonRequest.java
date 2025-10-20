@@ -1,12 +1,21 @@
 package sum25.studentcode.backend.modules.Lesson.dto.request;
 
-import lombok.Data;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class LessonRequest {
-    private Long gradeId;
+
+    @NotBlank(message = "Lesson title is required")
     private String lessonTitle;
+
     private String lessonContent;
+
     private String lessonObjectives;
-    private Long subjectId;
+
+    private Long gradeId; // optional
 }

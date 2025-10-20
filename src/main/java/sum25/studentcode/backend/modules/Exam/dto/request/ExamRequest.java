@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 @Data
 public class ExamRequest {
     private String examName;
+    private String examCode;
     private String description;
     private Integer durationMinutes;
     private LocalDateTime examDate;
-    private Long subjectId;
 }
