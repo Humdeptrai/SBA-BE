@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.StudentEnrollRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.StudentPracticeRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.TeacherGradeRequest;
+import sum25.studentcode.backend.modules.StudentPractice.dto.response.PracticeQuestionResponse;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentEnrollResponse;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentPracticeResponse;
 import sum25.studentcode.backend.modules.StudentPractice.service.StudentPracticeService;
@@ -54,5 +55,12 @@ public class StudentPracticeController {
         return studentPracticeService.enrollStudent(request);
     }
 
+    /** 🧩 Học sinh xem danh sách câu hỏi trong lượt luyện tập */
+    @GetMapping("/{practiceId}/questions")
+    public List<PracticeQuestionResponse> getQuestionsForPractice(
+            @PathVariable Long practiceId
+    ) {
+        return studentPracticeService.getQuestionsForPractice(practiceId);
+    }
 
 }

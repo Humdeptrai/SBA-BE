@@ -4,18 +4,15 @@ import lombok.Data;
 import sum25.studentcode.backend.modules.Options.dto.response.OptionsResponse;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class MatrixQuestionResponse {
+public class MatrixQuestionWithOptionsResponse {
     private Long matrixQuestionId;
     private Long matrixId;
-    private String matrixName;       // ✅ hiển thị tên ma trận
+    private String matrixName;
     private Long questionId;
-    private String questionText;     // ✅ hiển thị nội dung câu hỏi
+    private String questionText;
     private BigDecimal marksAllocated;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private List<OptionsResponse> options; // ✅ thêm danh sách option
 }

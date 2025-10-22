@@ -26,34 +26,37 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
 
     @Override
     public StudentAnswersResponse createStudentAnswer(StudentAnswersRequest request) {
-        // 1️⃣ Kiểm tra tồn tại
         StudentPractice studentPractice = studentPracticeRepository.findById(request.getPracticeId())
                 .orElseThrow(() -> new RuntimeException("StudentPractice not found"));
         Questions question = questionsRepository.findById(request.getQuestionId())
                 .orElseThrow(() -> new RuntimeException("Question not found"));
 
-        // 2️⃣ Lấy đáp án đúng
-        String correctAnswer = question.getCorrectAnswer();
         boolean isCorrect = false;
+        BigDecimal marksEarned = BigDecimal.ZERO;
 
-        // 3️⃣ Kiểm tra loại câu hỏi (multiple choice)
+        // ✅ Nếu là câu hỏi trắc nghiệm
         if (question.getQuestionType() != null &&
                 "Multiple Choice".equalsIgnoreCase(question.getQuestionType().getTypeName())) {
-            // So sánh đáp án đúng với selectedOptionId
-            // (ở đây ta chỉ so sánh theo text nếu cần thiết, hoặc qua options table)
+
             Long correctOptionId = question.getOptions()
                     .stream()
                     .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
                     .map(opt -> opt.getOptionId())
                     .findFirst()
                     .orElse(null);
+
             isCorrect = correctOptionId != null && correctOptionId.equals(request.getSelectedOptionId());
         }
 
-        // 4️⃣ Tự tính điểm nếu đúng
-        BigDecimal marksEarned = isCorrect ? BigDecimal.valueOf(10) : BigDecimal.ZERO;
+        // ✅ Nếu đúng thì tính điểm theo độ khó
+        if (isCorrect) {
+            if (question.getLevel() != null) {
+                marksEarned = BigDecimal.valueOf(question.getLevel().getDifficultyScore());
+            } else {
+                marksEarned = BigDecimal.valueOf(1); // mặc định 1 điểm nếu chưa có level
+            }
+        }
 
-        // 5️⃣ Tạo bản ghi StudentAnswer
         StudentAnswers studentAnswer = StudentAnswers.builder()
                 .studentPractice(studentPractice)
                 .question(question)
@@ -66,6 +69,7 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
         studentAnswer = studentAnswersRepository.save(studentAnswer);
         return convertToResponse(studentAnswer);
     }
+
 
     @Override
     public StudentAnswersResponse getStudentAnswerById(Long id) {
@@ -101,10 +105,11 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
             isCorrect = correctOptionId != null && correctOptionId.equals(request.getSelectedOptionId());
         }
 
+        // ❌ Không tính điểm ở đây nữa
         existing.setQuestion(question);
         existing.setSelectedOptionId(request.getSelectedOptionId());
         existing.setIsCorrect(isCorrect);
-        existing.setMarksEarned(isCorrect ? BigDecimal.valueOf(10) : BigDecimal.ZERO);
+        existing.setMarksEarned(BigDecimal.ZERO);
         existing.setAnsweredAt(LocalDateTime.now());
 
         studentAnswersRepository.save(existing);

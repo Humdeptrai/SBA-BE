@@ -62,7 +62,10 @@ public class DataSeeder implements CommandLineRunner {
 
         // 2️⃣ GRADE
         if (gradeRepository.count() == 0) {
-            gradeRepository.save(Grade.builder().gradeLevel("Grade 10").description("Basic level").build());
+            gradeRepository.save(Grade.builder()
+                    .gradeLevel("Grade 10")
+                    .description("Basic level")
+                    .build());
         }
 
         // 3️⃣ LESSON
@@ -118,7 +121,7 @@ public class DataSeeder implements CommandLineRunner {
             matrixRepository.save(matrix);
         }
 
-        // 8️⃣ QUESTIONS (có gắn Lesson, Level, QuestionType)
+        // 8️⃣ QUESTIONS
         if (questionsRepository.count() == 0) {
             Lesson lesson = lessonRepository.findAll().get(0);
             Level easy = levelRepository.findAll().get(0);
@@ -145,7 +148,6 @@ public class DataSeeder implements CommandLineRunner {
             questionsRepository.save(q2);
         }
 
-
         // 9️⃣ OPTIONS
         if (optionsRepository.count() == 0) {
             Questions q1 = questionsRepository.findAll().get(0);
@@ -161,21 +163,19 @@ public class DataSeeder implements CommandLineRunner {
         if (practiceSessionRepository.count() == 0) {
             User teacher = userRepository.findByUsername("admin")
                     .orElseThrow(() -> new RuntimeException("Admin user not found"));
-
-            User student = userRepository.findByUsername("student").orElseThrow();
-            Exam exam = examRepository.findAll().get(0);
+            Matrix matrix = matrixRepository.findAll().get(0);
 
             PracticeSession session = PracticeSession.builder()
-                    .exam(exam)
+                    .matrix(matrix)
                     .sessionName("Math Practice Session 1")
                     .sessionCode("MATH001")
                     .teacher(teacher)
-                    .student(student)
                     .startTime(LocalDateTime.now())
                     .endTime(LocalDateTime.now().plusHours(1))
                     .isActive(true)
                     .maxParticipants(30)
                     .build();
+
             practiceSessionRepository.save(session);
         }
 
@@ -190,6 +190,7 @@ public class DataSeeder implements CommandLineRunner {
                     .status(StudentPractice.PracticeStatus.IN_PROGRESS)
                     .perTime(LocalDateTime.now())
                     .build();
+
             studentPracticeRepository.save(practice);
         }
 

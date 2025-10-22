@@ -2,6 +2,7 @@ package sum25.studentcode.backend.modules.StudentPractice.service;
 
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.StudentEnrollRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.TeacherGradeRequest;
+import sum25.studentcode.backend.modules.StudentPractice.dto.response.PracticeQuestionResponse;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentEnrollResponse;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentPracticeResponse;
 
@@ -14,6 +15,7 @@ public interface StudentPracticeService {
     StudentEnrollResponse enrollStudent(StudentEnrollRequest request);
     StudentPracticeResponse submitPractice(Long practiceId); // Học sinh nộp bài
     StudentPracticeResponse gradePractice(Long practiceId, TeacherGradeRequest request); // Giáo viên chấm điểm
+    List<PracticeQuestionResponse> getQuestionsForPractice(Long practiceId);
 
 
 }
