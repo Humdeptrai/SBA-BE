@@ -1,11 +1,15 @@
 package sum25.studentcode.backend.modules.Level.dto.response;
 
-import lombok.Data;
-
+import lombok.*;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class LevelResponse {
+
     private Long levelId;
     private String levelName;
     private Integer difficultyScore;

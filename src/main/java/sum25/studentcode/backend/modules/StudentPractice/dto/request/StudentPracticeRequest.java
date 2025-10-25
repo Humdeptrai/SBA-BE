@@ -1,7 +1,7 @@
 package sum25.studentcode.backend.modules.StudentPractice.dto.request;
 
 import lombok.Data;
-
+import sum25.studentcode.backend.model.StudentPractice.PracticeStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -12,5 +12,5 @@ public class StudentPracticeRequest {
     private LocalDateTime perTime;
     private LocalDateTime submitTime;
     private BigDecimal totalScore;
-    private String status;
+    private PracticeStatus status; // ✅ enum được import đúng
 }

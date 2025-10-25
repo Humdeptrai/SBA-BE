@@ -11,6 +11,8 @@ import sum25.studentcode.backend.modules.StudentAnswers.dto.response.StudentAnsw
 import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
 import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,17 +30,46 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
                 .orElseThrow(() -> new RuntimeException("StudentPractice not found"));
         Questions question = questionsRepository.findById(request.getQuestionId())
                 .orElseThrow(() -> new RuntimeException("Question not found"));
+
+        boolean isCorrect = false;
+        BigDecimal marksEarned = BigDecimal.ZERO;
+
+        // ✅ Nếu là câu hỏi trắc nghiệm
+        if (question.getQuestionType() != null &&
+                "Multiple Choice".equalsIgnoreCase(question.getQuestionType().getTypeName())) {
+
+            Long correctOptionId = question.getOptions()
+                    .stream()
+                    .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
+                    .map(opt -> opt.getOptionId())
+                    .findFirst()
+                    .orElse(null);
+
+            isCorrect = correctOptionId != null && correctOptionId.equals(request.getSelectedOptionId());
+        }
+
+        // ✅ Nếu đúng thì tính điểm theo độ khó
+        if (isCorrect) {
+            if (question.getLevel() != null) {
+                marksEarned = BigDecimal.valueOf(question.getLevel().getDifficultyScore());
+            } else {
+                marksEarned = BigDecimal.valueOf(1); // mặc định 1 điểm nếu chưa có level
+            }
+        }
+
         StudentAnswers studentAnswer = StudentAnswers.builder()
                 .studentPractice(studentPractice)
                 .question(question)
                 .selectedOptionId(request.getSelectedOptionId())
-                .isCorrect(request.getIsCorrect())
-                .marksEarned(request.getMarksEarned())
-                .answeredAt(request.getAnsweredAt())
+                .isCorrect(isCorrect)
+                .marksEarned(marksEarned)
+                .answeredAt(LocalDateTime.now())
                 .build();
+
         studentAnswer = studentAnswersRepository.save(studentAnswer);
         return convertToResponse(studentAnswer);
     }
+
 
     @Override
     public StudentAnswersResponse getStudentAnswerById(Long id) {
@@ -56,20 +87,33 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
 
     @Override
     public StudentAnswersResponse updateStudentAnswer(Long id, StudentAnswersRequest request) {
-        StudentAnswers studentAnswer = studentAnswersRepository.findById(id)
+        StudentAnswers existing = studentAnswersRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("StudentAnswer not found"));
-        StudentPractice studentPractice = studentPracticeRepository.findById(request.getPracticeId())
-                .orElseThrow(() -> new RuntimeException("StudentPractice not found"));
+
         Questions question = questionsRepository.findById(request.getQuestionId())
                 .orElseThrow(() -> new RuntimeException("Question not found"));
-        studentAnswer.setStudentPractice(studentPractice);
-        studentAnswer.setQuestion(question);
-        studentAnswer.setSelectedOptionId(request.getSelectedOptionId());
-        studentAnswer.setIsCorrect(request.getIsCorrect());
-        studentAnswer.setMarksEarned(request.getMarksEarned());
-        studentAnswer.setAnsweredAt(request.getAnsweredAt());
-        studentAnswer = studentAnswersRepository.save(studentAnswer);
-        return convertToResponse(studentAnswer);
+
+        boolean isCorrect = false;
+        if (question.getQuestionType() != null &&
+                "Multiple Choice".equalsIgnoreCase(question.getQuestionType().getTypeName())) {
+            Long correctOptionId = question.getOptions()
+                    .stream()
+                    .filter(opt -> Boolean.TRUE.equals(opt.getIsCorrect()))
+                    .map(opt -> opt.getOptionId())
+                    .findFirst()
+                    .orElse(null);
+            isCorrect = correctOptionId != null && correctOptionId.equals(request.getSelectedOptionId());
+        }
+
+        // ❌ Không tính điểm ở đây nữa
+        existing.setQuestion(question);
+        existing.setSelectedOptionId(request.getSelectedOptionId());
+        existing.setIsCorrect(isCorrect);
+        existing.setMarksEarned(BigDecimal.ZERO);
+        existing.setAnsweredAt(LocalDateTime.now());
+
+        studentAnswersRepository.save(existing);
+        return convertToResponse(existing);
     }
 
     @Override
@@ -80,15 +124,15 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
         studentAnswersRepository.deleteById(id);
     }
 
-    private StudentAnswersResponse convertToResponse(StudentAnswers studentAnswer) {
+    private StudentAnswersResponse convertToResponse(StudentAnswers entity) {
         StudentAnswersResponse response = new StudentAnswersResponse();
-        response.setAnswerId(studentAnswer.getAnswerId());
-        response.setPracticeId(studentAnswer.getStudentPractice().getPracticeId());
-        response.setQuestionId(studentAnswer.getQuestion().getQuestionId());
-        response.setSelectedOptionId(studentAnswer.getSelectedOptionId());
-        response.setIsCorrect(studentAnswer.getIsCorrect());
-        response.setMarksEarned(studentAnswer.getMarksEarned());
-        response.setAnsweredAt(studentAnswer.getAnsweredAt());
+        response.setAnswerId(entity.getAnswerId());
+        response.setPracticeId(entity.getStudentPractice().getPracticeId());
+        response.setQuestionId(entity.getQuestion().getQuestionId());
+        response.setSelectedOptionId(entity.getSelectedOptionId());
+        response.setIsCorrect(entity.getIsCorrect());
+        response.setMarksEarned(entity.getMarksEarned());
+        response.setAnsweredAt(entity.getAnsweredAt());
         return response;
     }
 }

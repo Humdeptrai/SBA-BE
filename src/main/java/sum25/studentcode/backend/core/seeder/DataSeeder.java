@@ -3,25 +3,21 @@ package sum25.studentcode.backend.core.seeder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import sum25.studentcode.backend.model.*;
-import sum25.studentcode.backend.modules.AppSetting.repository.AppSettingRepository;
-import sum25.studentcode.backend.modules.Auth.repository.UserRepository;
-import sum25.studentcode.backend.modules.Exam.repository.ExamRepository;
-import sum25.studentcode.backend.modules.Grade.repository.GradeRepository;
-import sum25.studentcode.backend.modules.Level.repository.LevelRepository;
-import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
-import sum25.studentcode.backend.modules.Options.repository.OptionsRepository;
-import sum25.studentcode.backend.modules.PracticeSession.repository.PracticeSessionRepository;
-import sum25.studentcode.backend.modules.QuestionType.repository.QuestionTypeRepository;
-import sum25.studentcode.backend.modules.Questions.repository.QuestionsRepository;
-import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
-import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
-import sum25.studentcode.backend.modules.TeacherMatrix.repository.TeacherMatrixRepository;
-import sum25.studentcode.backend.modules.Transaction.repository.TransactionRepository;
-import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
+import sum25.studentcode.backend.model.*;
+import sum25.studentcode.backend.modules.Auth.repository.UserRepository;
+import sum25.studentcode.backend.modules.Grade.repository.GradeRepository;
+import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
+import sum25.studentcode.backend.modules.Level.repository.LevelRepository;
+import sum25.studentcode.backend.modules.QuestionType.repository.QuestionTypeRepository;
+import sum25.studentcode.backend.modules.Questions.repository.QuestionsRepository;
+import sum25.studentcode.backend.modules.Options.repository.OptionsRepository;
+import sum25.studentcode.backend.modules.Exam.repository.ExamRepository;
+import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
+import sum25.studentcode.backend.modules.PracticeSession.repository.PracticeSessionRepository;
+import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
+import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -32,282 +28,187 @@ public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final GradeRepository gradeRepository;
+    private final LessonRepository lessonRepository;
     private final LevelRepository levelRepository;
     private final QuestionTypeRepository questionTypeRepository;
-    private final ExamRepository examRepository;
-    private final MatrixRepository matrixRepository;
     private final QuestionsRepository questionsRepository;
     private final OptionsRepository optionsRepository;
+    private final ExamRepository examRepository;
+    private final MatrixRepository matrixRepository;
     private final PracticeSessionRepository practiceSessionRepository;
     private final StudentPracticeRepository studentPracticeRepository;
     private final StudentAnswersRepository studentAnswersRepository;
-    private final TeacherMatrixRepository teacherMatrixRepository;
-    private final TransactionRepository transactionRepository;
-    private final WalletRepository walletRepository;
-    private final AppSettingRepository appSettingRepository;
 
     @Override
     public void run(String... args) throws Exception {
-        // Seed users
         PasswordEncoder encoder = new BCryptPasswordEncoder();
 
+        // 1️⃣ USER
         if (userRepository.count() == 0) {
-            User admin = User.builder()
+            User teacher = User.builder()
                     .username("admin")
-                    .password(encoder.encode("admin123")) // mã hóa thật
+                    .password(encoder.encode("admin123"))
                     .role(Role.TEACHER)
                     .build();
-            userRepository.save(admin);
+            userRepository.save(teacher);
 
             User student = User.builder()
                     .username("student")
-                    .password(encoder.encode("student123")) // mã hóa thật
+                    .password(encoder.encode("student123"))
                     .role(Role.STUDENT)
                     .build();
             userRepository.save(student);
         }
 
-        // Seed grades
+        // 2️⃣ GRADE
         if (gradeRepository.count() == 0) {
-            Grade grade10 = Grade.builder()
+            gradeRepository.save(Grade.builder()
                     .gradeLevel("Grade 10")
-                    .description("10th grade")
-                    .build();
-            gradeRepository.save(grade10);
-
-            Grade grade11 = Grade.builder()
-                    .gradeLevel("Grade 11")
-                    .description("11th grade")
-                    .build();
-            gradeRepository.save(grade11);
+                    .description("Basic level")
+                    .build());
         }
 
-        // Seed levels
+        // 3️⃣ LESSON
+        if (lessonRepository.count() == 0) {
+            Grade grade = gradeRepository.findAll().get(0);
+            lessonRepository.save(
+                    Lesson.builder()
+                            .grade(grade)
+                            .lessonTitle("Algebra Basics")
+                            .lessonContent("Introduction to equations and variables")
+                            .lessonObjectives("Help students understand basic algebra concepts")
+                            .build()
+            );
+        }
+
+        // 4️⃣ LEVEL
         if (levelRepository.count() == 0) {
-            Level easy = Level.builder()
-                    .levelName("Easy")
-                    .difficultyScore(1)
-                    .description("Easy level")
-                    .build();
-            levelRepository.save(easy);
-
-            Level medium = Level.builder()
-                    .levelName("Medium")
-                    .difficultyScore(2)
-                    .description("Medium level")
-                    .build();
-            levelRepository.save(medium);
+            levelRepository.save(Level.builder().levelName("Easy").difficultyScore(1).description("Easy level").build());
+            levelRepository.save(Level.builder().levelName("Medium").difficultyScore(2).description("Medium level").build());
         }
 
-        // Seed question types
+        // 5️⃣ QUESTION TYPE
         if (questionTypeRepository.count() == 0) {
-            QuestionType multipleChoice = QuestionType.builder()
+            questionTypeRepository.save(QuestionType.builder()
                     .typeName("Multiple Choice")
-                    .description("Multiple choice questions")
+                    .description("Choose one correct answer")
                     .enabledAt(true)
-                    .build();
-            questionTypeRepository.save(multipleChoice);
-
-            QuestionType trueFalse = QuestionType.builder()
-                    .typeName("True/False")
-                    .description("True or false questions")
-                    .enabledAt(true)
-                    .build();
-            questionTypeRepository.save(trueFalse);
+                    .build());
         }
 
-        // Seed exams (depends on subjects)
+        // 6️⃣ EXAM
         if (examRepository.count() == 0) {
-            Exam mathExam = Exam.builder()
-                    .examName("Math Exam 1")
-                    .description("First math exam")
-                    .durationMinutes(60)
-                    .examDate(LocalDateTime.now().plusDays(7))
-                    .build();
-            examRepository.save(mathExam);
+            examRepository.save(
+                    Exam.builder()
+                            .examName("Math Entrance Test")
+                            .examCode("MATH001")
+                            .description("Initial placement test for students")
+                            .durationMinutes(30)
+                            .examDate(LocalDateTime.now().plusDays(3))
+                            .isActive(true)
+                            .build()
+            );
         }
 
-        // Seed matrices (depends on exams)
+        // 7️⃣ MATRIX
         if (matrixRepository.count() == 0) {
-            Exam exam = examRepository.findAll().get(0);
             Matrix matrix = Matrix.builder()
-                    .exam(exam)
+                    .exam(examRepository.findAll().get(0))
                     .matrixName("Math Matrix 1")
-                    .description("Matrix for math exam")
-                    .totalQuestions(10)
+                    .description("Basic matrix structure for exam")
+                    .totalQuestions(3)
                     .build();
             matrixRepository.save(matrix);
         }
 
-        // Seed questions (depends on subjects, levels, questionTypes)
+        // 8️⃣ QUESTIONS
         if (questionsRepository.count() == 0) {
-            Level easy = levelRepository.findAll().stream()
-                    .filter(l -> "Easy".equals(l.getLevelName()))
-                    .findFirst().orElseThrow();
-            QuestionType mc = questionTypeRepository.findAll().stream()
-                    .filter(qt -> "Multiple Choice".equals(qt.getTypeName()))
-                    .findFirst().orElseThrow();
+            Lesson lesson = lessonRepository.findAll().get(0);
+            Level easy = levelRepository.findAll().get(0);
+            QuestionType mcq = questionTypeRepository.findAll().get(0);
 
-            Questions question = Questions.builder()
+            Questions q1 = Questions.builder()
+                    .lesson(lesson)
+                    .level(easy)
+                    .questionType(mcq)
                     .questionText("What is 2 + 2?")
                     .correctAnswer("4")
-                    .questionType(mc)
+                    .explanation("Basic addition")
                     .build();
-            questionsRepository.save(question);
+            questionsRepository.save(q1);
+
+            Questions q2 = Questions.builder()
+                    .lesson(lesson)
+                    .level(easy)
+                    .questionType(mcq)
+                    .questionText("What is 5 - 3?")
+                    .correctAnswer("2")
+                    .explanation("Basic subtraction")
+                    .build();
+            questionsRepository.save(q2);
         }
 
-        // Seed options (depends on questions)
+        // 9️⃣ OPTIONS
         if (optionsRepository.count() == 0) {
-            Questions question = questionsRepository.findAll().get(0);
-            Options option1 = Options.builder()
-                    .question(question)
-                    .optionText("3")
-                    .isCorrect(false)
-                    .optionOrder(1)
-                    .build();
-            optionsRepository.save(option1);
+            Questions q1 = questionsRepository.findAll().get(0);
+            optionsRepository.save(Options.builder().question(q1).optionText("3").isCorrect(false).optionOrder(1).build());
+            optionsRepository.save(Options.builder().question(q1).optionText("4").isCorrect(true).optionOrder(2).build());
 
-            Options option2 = Options.builder()
-                    .question(question)
-                    .optionText("4")
-                    .isCorrect(true)
-                    .optionOrder(2)
-                    .build();
-            optionsRepository.save(option2);
+            Questions q2 = questionsRepository.findAll().get(1);
+            optionsRepository.save(Options.builder().question(q2).optionText("1").isCorrect(false).optionOrder(1).build());
+            optionsRepository.save(Options.builder().question(q2).optionText("2").isCorrect(true).optionOrder(2).build());
         }
 
-        // Seed practice sessions (depends on exams, users)
+        // 🔟 PRACTICE SESSION
         if (practiceSessionRepository.count() == 0) {
-            Exam exam = examRepository.findAll().get(0);
-            User student = userRepository.findAll().stream()
-                    .filter(u -> "student".equals(u.getUsername()))
-                    .findFirst().orElseThrow();
-            User teacher = userRepository.findAll().stream()
-                    .filter(u -> "admin".equals(u.getUsername()))
-                    .findFirst().orElseThrow();
+            User teacher = userRepository.findByUsername("admin")
+                    .orElseThrow(() -> new RuntimeException("Admin user not found"));
+            Matrix matrix = matrixRepository.findAll().get(0);
 
             PracticeSession session = PracticeSession.builder()
-                    .exam(exam)
-                    .student(student)
-                    .sessionCode("SESSION001")
+                    .matrix(matrix)
+                    .sessionName("Math Practice Session 1")
+                    .sessionCode("MATH001")
                     .teacher(teacher)
-                    .sessionName("Practice Session 1")
                     .startTime(LocalDateTime.now())
                     .endTime(LocalDateTime.now().plusHours(1))
                     .isActive(true)
-                    .maxParticipants(50)
+                    .maxParticipants(30)
                     .build();
+
             practiceSessionRepository.save(session);
         }
 
-        // Seed student practices (depends on practice sessions, users)
+        // 1️⃣1️⃣ STUDENT PRACTICE
         if (studentPracticeRepository.count() == 0) {
+            User student = userRepository.findByUsername("student").orElseThrow();
             PracticeSession session = practiceSessionRepository.findAll().get(0);
-            User student = userRepository.findAll().stream()
-                    .filter(u -> "student".equals(u.getUsername()))
-                    .findFirst().orElseThrow();
 
             StudentPractice practice = StudentPractice.builder()
                     .practiceSession(session)
                     .student(student)
+                    .status(StudentPractice.PracticeStatus.IN_PROGRESS)
                     .perTime(LocalDateTime.now())
-                    .submitTime(LocalDateTime.now().plusMinutes(30))
-                    .totalScore(BigDecimal.valueOf(85.0))
-                    .status("Completed")
                     .build();
+
             studentPracticeRepository.save(practice);
         }
 
-        // Seed student answers (depends on student practices, questions)
+        // 1️⃣2️⃣ STUDENT ANSWER
         if (studentAnswersRepository.count() == 0) {
             StudentPractice practice = studentPracticeRepository.findAll().get(0);
-            Questions question = questionsRepository.findAll().get(0);
+            Questions q1 = questionsRepository.findAll().get(0);
 
-            StudentAnswers answer = StudentAnswers.builder()
-                    .studentPractice(practice)
-                    .question(question)
-                    .selectedOptionId(2L) // Assuming option 2 is correct
-                    .isCorrect(true)
-                    .marksEarned(BigDecimal.valueOf(10.0))
-                    .answeredAt(LocalDateTime.now())
-                    .build();
-            studentAnswersRepository.save(answer);
-        }
-
-        // Seed teacher matrices (depends on users, matrices)
-        if (teacherMatrixRepository.count() == 0) {
-            User teacher = userRepository.findAll().stream()
-                    .filter(u -> "admin".equals(u.getUsername()))
-                    .findFirst().orElseThrow();
-            Matrix matrix = matrixRepository.findAll().get(0);
-
-            TeacherMatrix tm = TeacherMatrix.builder()
-                    .teacher(teacher)
-                    .matrix(matrix)
-                    .grade(BigDecimal.valueOf(90.0))
-                    .assignmentDate(LocalDateTime.now())
-                    .build();
-            teacherMatrixRepository.save(tm);
-        }
-
-        // Seed wallets (depends on users)
-        if (walletRepository.count() == 0) {
-            User student = userRepository.findAll().stream()
-                    .filter(u -> "student".equals(u.getUsername()))
-                    .findFirst().orElseThrow();
-
-            Wallet wallet = Wallet.builder()
-                    .user(student)
-                    .balance(BigDecimal.valueOf(100.0))
-                    .currency("USD")
-                    .isActive(true)
-                    .build();
-            walletRepository.save(wallet);
-        }
-
-        // Seed transactions (depends on wallets, users)
-        if (transactionRepository.count() == 0) {
-            // 1. Tìm User "student"
-            User student = userRepository.findAll().stream()
-                    .filter(u -> "student".equals(u.getUsername()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("User 'student' not found for initialization.")); // Thêm thông báo lỗi rõ ràng
-
-            // 2. Tìm Ví (Wallet) của User đó
-            Wallet wallet = walletRepository.findByUser(student);
-
-            // 3. Tính toán số dư chính xác
-            BigDecimal currentBalance = wallet.getBalance(); // Số dư hiện tại (có thể là 0.0)
-            BigDecimal depositAmount = BigDecimal.valueOf(50.0);
-            BigDecimal newBalance = currentBalance.add(depositAmount);
-
-            // 4. Cập nhật số dư trong Ví trước khi tạo Transaction (Bắt buộc)
-            wallet.setBalance(newBalance);
-            walletRepository.save(wallet);
-
-            // 5. Tạo Transaction
-            Transaction transaction = Transaction.builder()
-                    .wallet(wallet)
-                    .user(student)
-                    .transactionType(Transaction.TransactionType.DEPOSIT)
-                    .amount(depositAmount)
-                    .balanceBefore(currentBalance)
-                    .balanceAfter(newBalance)
-                    .description("Initial deposit for testing")
-                    .status(Transaction.TransactionStatus.SUCCESS)
-                    .build();
-
-            transactionRepository.save(transaction);
-        }
-
-        // Seed app settings
-        if (appSettingRepository.count() == 0) {
-            AppSetting setting = AppSetting.builder()
-                    .settingName("app.version")
-                    .settingValue("1.0.0")
-                    .description("Application version")
-                    .build();
-            appSettingRepository.save(setting);
+            studentAnswersRepository.save(
+                    StudentAnswers.builder()
+                            .studentPractice(practice)
+                            .question(q1)
+                            .selectedOptionId(2L)
+                            .isCorrect(true)
+                            .marksEarned(BigDecimal.valueOf(10))
+                            .answeredAt(LocalDateTime.now())
+                            .build()
+            );
         }
     }
 }

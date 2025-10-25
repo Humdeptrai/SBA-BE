@@ -1,14 +1,16 @@
-package sum25.studentcode.backend.modules.Questions.service;
+    package sum25.studentcode.backend.modules.Questions.service;
 
-import sum25.studentcode.backend.modules.Questions.dto.request.QuestionsRequest;
-import sum25.studentcode.backend.modules.Questions.dto.response.QuestionsResponse;
+    import sum25.studentcode.backend.modules.Options.dto.response.OptionsResponse;
+    import sum25.studentcode.backend.modules.Questions.dto.request.QuestionsRequest;
+    import sum25.studentcode.backend.modules.Questions.dto.response.QuestionsResponse;
 
-import java.util.List;
+    import java.util.List;
 
-public interface QuestionsService {
-    QuestionsResponse createQuestion(QuestionsRequest request);
-    QuestionsResponse getQuestionById(Long id);
-    List<QuestionsResponse> getAllQuestions();
-    QuestionsResponse updateQuestion(Long id, QuestionsRequest request);
-    void deleteQuestion(Long id);
-}
+    public interface QuestionsService {
+        QuestionsResponse createQuestion(QuestionsRequest request);
+        QuestionsResponse getQuestionById(Long id);
+        List<QuestionsResponse> getAllQuestions();
+        QuestionsResponse updateQuestion(Long id, QuestionsRequest request);
+        void deleteQuestion(Long id);
+        List<OptionsResponse> getOptionsByQuestionId(Long questionId);
+    }

@@ -8,10 +8,10 @@ import java.time.LocalDateTime;
 public class ExamResponse {
     private Long examId;
     private String examName;
+    private String examCode;
     private String description;
     private Integer durationMinutes;
     private LocalDateTime examDate;
-    private Long subjectId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

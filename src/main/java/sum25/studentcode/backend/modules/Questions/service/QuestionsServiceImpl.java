@@ -2,7 +2,13 @@ package sum25.studentcode.backend.modules.Questions.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.model.*;
+import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
+import sum25.studentcode.backend.modules.Level.repository.LevelRepository;
+import sum25.studentcode.backend.modules.Options.dto.response.OptionsResponse;
+import sum25.studentcode.backend.modules.Options.repository.OptionsRepository;
+import sum25.studentcode.backend.modules.QuestionType.repository.QuestionTypeRepository;
 import sum25.studentcode.backend.modules.Questions.dto.request.QuestionsRequest;
 import sum25.studentcode.backend.modules.Questions.dto.response.QuestionsResponse;
 import sum25.studentcode.backend.modules.Questions.repository.QuestionsRepository;
@@ -12,25 +18,33 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class QuestionsServiceImpl implements QuestionsService {
 
     private final QuestionsRepository questionsRepository;
-    // Add other repositories as needed, e.g., LessonRepository, etc.
+    private final LessonRepository lessonRepository;
+    private final LevelRepository levelRepository;
+    private final QuestionTypeRepository questionTypeRepository;
+    private final OptionsRepository optionsRepository;
 
     @Override
     public QuestionsResponse createQuestion(QuestionsRequest request) {
-        // Fetch related entities
-        // Lesson lesson = lessonRepository.findById(request.getLessonId()).orElseThrow();
-        // etc.
+        Lesson lesson = lessonRepository.findById(request.getLessonId())
+                .orElseThrow(() -> new RuntimeException("Lesson not found"));
+        Level level = levelRepository.findById(request.getLevelId())
+                .orElseThrow(() -> new RuntimeException("Level not found"));
+        QuestionType questionType = questionTypeRepository.findById(request.getQuestionTypeId())
+                .orElseThrow(() -> new RuntimeException("Question type not found"));
+
         Questions question = Questions.builder()
                 .questionText(request.getQuestionText())
                 .correctAnswer(request.getCorrectAnswer())
                 .explanation(request.getExplanation())
-                // .lesson(lesson)
-                // .questionType(questionType)
-                // .level(level)
-                // .subject(subject)
+                .lesson(lesson)
+                .level(level)
+                .questionType(questionType)
                 .build();
+
         question = questionsRepository.save(question);
         return convertToResponse(question);
     }
@@ -53,10 +67,29 @@ public class QuestionsServiceImpl implements QuestionsService {
     public QuestionsResponse updateQuestion(Long id, QuestionsRequest request) {
         Questions question = questionsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Question not found"));
-        question.setQuestionText(request.getQuestionText());
-        question.setCorrectAnswer(request.getCorrectAnswer());
-        question.setExplanation(request.getExplanation());
-        // Update relationships
+
+        if (request.getQuestionText() != null) question.setQuestionText(request.getQuestionText());
+        if (request.getCorrectAnswer() != null) question.setCorrectAnswer(request.getCorrectAnswer());
+        if (request.getExplanation() != null) question.setExplanation(request.getExplanation());
+
+        if (request.getLessonId() != null) {
+            Lesson lesson = lessonRepository.findById(request.getLessonId())
+                    .orElseThrow(() -> new RuntimeException("Lesson not found"));
+            question.setLesson(lesson);
+        }
+
+        if (request.getLevelId() != null) {
+            Level level = levelRepository.findById(request.getLevelId())
+                    .orElseThrow(() -> new RuntimeException("Level not found"));
+            question.setLevel(level);
+        }
+
+        if (request.getQuestionTypeId() != null) {
+            QuestionType questionType = questionTypeRepository.findById(request.getQuestionTypeId())
+                    .orElseThrow(() -> new RuntimeException("Question type not found"));
+            question.setQuestionType(questionType);
+        }
+
         question = questionsRepository.save(question);
         return convertToResponse(question);
     }
@@ -69,6 +102,22 @@ public class QuestionsServiceImpl implements QuestionsService {
         questionsRepository.deleteById(id);
     }
 
+    @Override
+    public List<OptionsResponse> getOptionsByQuestionId(Long questionId) {
+        return optionsRepository.findByQuestion_QuestionId(questionId).stream()
+                .map(option -> {
+                    OptionsResponse res = new OptionsResponse();
+                    res.setOptionId(option.getOptionId());
+                    res.setQuestionId(option.getQuestion().getQuestionId());
+                    res.setOptionText(option.getOptionText());
+                    res.setIsCorrect(option.getIsCorrect());
+                    res.setOptionOrder(option.getOptionOrder());
+                    res.setCreatedAt(option.getCreatedAt());
+                    res.setUpdatedAt(option.getUpdatedAt());
+                    return res;
+                }).collect(Collectors.toList());
+    }
+
     private QuestionsResponse convertToResponse(Questions question) {
         QuestionsResponse response = new QuestionsResponse();
         response.setQuestionId(question.getQuestionId());
@@ -77,10 +126,9 @@ public class QuestionsServiceImpl implements QuestionsService {
         response.setExplanation(question.getExplanation());
         response.setCreatedAt(question.getCreatedAt());
         response.setUpdatedAt(question.getUpdatedAt());
-        // Set IDs for relationships
         if (question.getLesson() != null) response.setLessonId(question.getLesson().getLessonId());
-        if (question.getQuestionType() != null) response.setQuestionTypeId(question.getQuestionType().getQuestionTypeId());
         if (question.getLevel() != null) response.setLevelId(question.getLevel().getLevelId());
+        if (question.getQuestionType() != null) response.setQuestionTypeId(question.getQuestionType().getQuestionTypeId());
         return response;
     }
 }
