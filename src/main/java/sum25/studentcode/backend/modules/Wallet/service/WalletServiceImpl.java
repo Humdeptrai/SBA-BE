@@ -169,6 +169,13 @@ public class WalletServiceImpl implements WalletService {
         walletRepository.save(wallet);
     }
 
+    @Override
+    public WalletResponse getWalletsByUserId(Long userId) {
+        Wallet wallet = walletRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new RuntimeException("Wallet not found for user ID: " + userId));
+        return convertToResponse(wallet);
+    }
+
     // --- Các phương thức BỊ LOẠI BỎ vì rủi ro ---
 
     /*

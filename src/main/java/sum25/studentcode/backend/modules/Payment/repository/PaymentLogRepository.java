@@ -8,4 +8,6 @@ import sum25.studentcode.backend.model.PaymentLog;
 @Repository
 public interface PaymentLogRepository extends JpaRepository<PaymentLog, Integer> {
     PaymentLog findByOrder(Order order);
+    boolean existsByGatewayOrderId(String gatewayOrderId);
+    PaymentLog findByGatewayOrderId(String gatewayOrderId);
 }

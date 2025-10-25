@@ -18,7 +18,7 @@ import java.util.Map;
  * Mọi logic nghiệp vụ (DB, PayPal API) đều nằm trong PayPalService.
  */
 @RestController
-@RequestMapping("/api/paypal")
+@RequestMapping("/api/pay")
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentController {

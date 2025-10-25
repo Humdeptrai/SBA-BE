@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "levels")
+@Table(name = "level")
 @Getter
 @Setter
 @NoArgsConstructor

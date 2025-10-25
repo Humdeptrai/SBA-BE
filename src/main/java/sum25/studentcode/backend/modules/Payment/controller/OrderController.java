@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import sum25.studentcode.backend.model.Pack;
@@ -17,7 +18,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/orders")
 @RequiredArgsConstructor
 @Slf4j
 public class OrderController {
@@ -30,17 +31,12 @@ public class OrderController {
      * Service sẽ tạo Order, gọi API PayPal, và trả về approvalUrl cho client redirect.
      *
      * @param request PackPurchaseRequest
-     * @param userDetails Thông tin User đang đăng nhập
      * @return PayPalPaymentResponse chứa approvalUrl để client redirect
      */
-    @PostMapping("/orders/purchase")
+    @PostMapping("/{userId}/purchase")
     public ResponseEntity<PayPalPaymentResponse> initiatePackPurchase(
-            @RequestBody PackPurchaseRequest request,
-            @AuthenticationPrincipal UserDetailsImpl userDetails
+            @RequestBody PackPurchaseRequest request, @PathVariable Long userId
     ) {
-        // Lấy ID người dùng hiện tại
-        Long userId = userDetails.getUserId();
-
         try {
             // Gọi Service để tạo yêu cầu thanh toán với PayPal
             PayPalPaymentResponse response = payPalService.createPaymentRequest(request, userId);

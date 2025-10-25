@@ -1,6 +1,7 @@
 package sum25.studentcode.backend.modules.Auth.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import sum25.studentcode.backend.model.Role;
 
@@ -13,7 +14,7 @@ public class RegisterRequest {
     
     @NotBlank(message = "Password is required")
     private String password;
-    
-    @NotBlank(message = "role is required")
+
+    @NotNull
     private Role role;
 }

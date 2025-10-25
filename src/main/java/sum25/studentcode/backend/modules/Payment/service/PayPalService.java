@@ -22,6 +22,7 @@ import sum25.studentcode.backend.modules.Payment.repository.PaymentLogRepository
 import sum25.studentcode.backend.modules.Wallet.service.WalletService;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -65,26 +66,38 @@ public class PayPalService {
 
     /**
      * 1. Khởi tạo yêu cầu thanh toán (Bước 1: Tạo Payment).
-     * BỔ SUNG: Đặt InvoiceNumber (Order ID) vào transaction.
+     * Hỗ trợ tự động chuyển đổi từ VNĐ sang USD để tương thích với PayPal Sandbox.
      */
     public PayPalPaymentResponse createPaymentRequest(PackPurchaseRequest request, Long userId) {
-        // 1️⃣ Lấy thông tin pack và tạo đơn hàng (trạng thái PENDING)
+        // 1️⃣ Lấy thông tin pack
         Pack pack = packRepository.findById(request.getPackId())
                 .orElseThrow(() -> new RuntimeException("Pack not found: " + request.getPackId()));
 
-        // Giả định orderService.createPendingOrder đã đặt OrderType và TransactionValue
+        // 2️⃣ Kiểm tra giá trị gói
+        BigDecimal packValueVnd = pack.getPackValue();
+        if (packValueVnd == null || packValueVnd.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Invalid pack value: " + packValueVnd);
+        }
+
+        // ⚙️ Tỷ giá quy đổi VNĐ → USD (tuỳ chỉnh)
+        BigDecimal exchangeRate = new BigDecimal("23000"); // 1 USD = 23,000 VNĐ
+        BigDecimal packValueUsd = packValueVnd.divide(exchangeRate, 2, java.math.RoundingMode.HALF_UP);
+
+        // Log thông tin để debug
+        log.info("🧾 Creating PayPal payment | Pack ID: {} | User ID: {} | Value: {} VND (~{} USD)",
+                pack.getPackId(), userId, packValueVnd, packValueUsd);
+
+        // 3️⃣ Tạo đơn hàng trạng thái PENDING
         Order order = orderService.createPendingOrder(userId, pack.getPackId());
 
-        // 2️⃣ Chuẩn bị dữ liệu thanh toán cho PayPal
+        // 4️⃣ Chuẩn bị dữ liệu thanh toán PayPal
         Amount amount = new Amount();
-        amount.setCurrency("USD");
-        amount.setTotal(pack.getPackValue().toString()); // decimal to string
+        amount.setCurrency("USD"); // Sandbox chỉ hỗ trợ các loại tiền như USD, EUR, GBP, ...
+        amount.setTotal(String.format("%.2f", packValueUsd)); // Đảm bảo format hợp lệ 2 chữ số thập phân
 
         com.paypal.api.payments.Transaction transaction = new com.paypal.api.payments.Transaction();
         transaction.setDescription("Purchase pack " + pack.getPackId());
         transaction.setAmount(amount);
-
-        // VẤN ĐỀ ĐÃ KHẮC PHỤC: Dùng Order ID làm Invoice Number để dễ dàng truy vấn
         transaction.setInvoiceNumber(order.getOrderId().toString());
 
         List<com.paypal.api.payments.Transaction> transactions = Collections.singletonList(transaction);
@@ -103,23 +116,25 @@ public class PayPalService {
         payment.setRedirectUrls(redirectUrls);
 
         try {
-            // 3️⃣ Tạo payment qua PayPal API
+            // 5️⃣ Gọi API PayPal tạo Payment
             Payment createdPayment = payment.create(apiContext);
 
-            // 4️⃣ Lấy approval URL để frontend redirect
+            // 6️⃣ Lấy URL người dùng cần redirect
             String approvalUrl = createdPayment.getLinks().stream()
                     .filter(link -> "approval_url".equals(link.getRel()))
                     .findFirst()
                     .map(Links::getHref)
                     .orElse(null);
 
-            // 5️⃣ Ghi log và cập nhật paymentReference vào Order
-            // ĐIỀU CHỈNH ĐỂ SỬ DỤNG TRƯỜNG paymentReference
+            // 7️⃣ Cập nhật Order và lưu log
             order.setPaymentReference(createdPayment.getId());
             orderService.saveOrder(order);
             savePaymentLog(order, createdPayment.toJSON(), "CREATE_PAYMENT_REQUEST");
 
-            // 6️⃣ Trả về DTO cho frontend
+            log.info("✅ PayPal payment created successfully | PaymentID={} | ApprovalUrl={}",
+                    createdPayment.getId(), approvalUrl);
+
+            // 8️⃣ Trả về phản hồi cho FE
             return PayPalPaymentResponse.builder()
                     .paymentId(createdPayment.getId())
                     .approvalUrl(approvalUrl)
@@ -129,49 +144,67 @@ public class PayPalService {
                     .build();
 
         } catch (PayPalRESTException e) {
-            log.error("❌ Error creating PayPal payment for Order {}: {}", order.getOrderId(), e.getMessage());
+            log.error(" Error creating PayPal payment for Order {}: {}", order.getOrderId(), e.getMessage());
             orderService.failOrder(order);
             throw new RuntimeException("Payment creation failed: " + e.getMessage());
         }
     }
+
 
     /**
      * 2. Thực hiện Payment và Xác nhận (Bước 2: Execute Payment).
      * Hàm này chỉ gọi API PayPal để hoàn tất giao dịch. KHÔNG CẬP NHẬT WALLET/TRANSACTION.
      * @return OrderId liên quan
      */
+    /**
+     * 2. Thực hiện Payment và Xác nhận (Bước 2: Execute Payment).
+     * Hàm này chỉ gọi API PayPal để hoàn tất giao dịch. KHÔNG CẬP NHẬT WALLET/TRANSACTION.
+     * @return OrderId liên quan
+     */
     public Long executePaymentAndVerify(String paymentId, String payerId) throws PayPalRESTException {
+        //  Nếu log đã tồn tại, bỏ qua việc lưu trùng
+        if (paymentLogRepository.existsByGatewayOrderId(paymentId)) {
+            log.warn("️ Payment log already exists for paymentId {}. Skipping duplicate save.", paymentId);
+
+            PaymentLog existing = paymentLogRepository.findByGatewayOrderId(paymentId);
+            Order existingOrder = existing.getOrder();
+            if (existingOrder != null) {
+                return existingOrder.getOrderId();
+            }
+
+            // Nếu chưa có Order gắn, fallback truy vấn qua OrderService
+            Order order = orderService.getOrderByPaymentReference(paymentId);
+            return order.getOrderId();
+        }
+
+        //  Gọi PayPal API để hoàn tất thanh toán
         Payment payment = new Payment();
         payment.setId(paymentId);
 
         PaymentExecution execution = new PaymentExecution();
         execution.setPayerId(payerId);
 
-        // Thực hiện giao dịch trên PayPal
         Payment executedPayment = payment.execute(apiContext, execution);
 
-        // Ghi log phản hồi Execute
-        // ĐIỀU CHỈNH: Sử dụng paymentId để truy vấn Order
+        //  Lấy Order tương ứng
         Order order = orderService.getOrderByPaymentReference(paymentId);
+
+        //  Ghi log an toàn (sẽ không trùng nhờ check ở trên)
         savePaymentLog(order, executedPayment.toJSON(), "EXECUTE_PAYMENT_RESPONSE");
 
-        // Kiểm tra trạng thái
-        if (executedPayment.getState().equalsIgnoreCase("approved")) {
-            // Nếu APPROVED, chúng ta chờ Webhook (B4) để cộng tiền.
-
-            // Lấy Order ID từ InvoiceNumber (Đã đặt ở B1)
+        //  Nếu approved → return orderId
+        if ("approved".equalsIgnoreCase(executedPayment.getState())) {
             String invoiceNumber = executedPayment.getTransactions().get(0).getInvoiceNumber();
             if (invoiceNumber == null) {
-                log.error("Missing InvoiceNumber in executed payment {}", paymentId);
-                throw new RuntimeException("Missing Invoice Number");
+                throw new RuntimeException("Missing Invoice Number for PayPal Payment " + paymentId);
             }
             return Long.valueOf(invoiceNumber);
         } else {
-            // Nếu trạng thái không phải approved, chuyển Order sang FAILED
             orderService.failOrder(order);
             throw new PayPalRESTException("Payment execution failed. State: " + executedPayment.getState());
         }
     }
+
 
     /**
      * 3. Xử lý Webhook (IPN) từ PayPal (Bước 4: Cộng tiền an toàn).
@@ -248,14 +281,23 @@ public class PayPalService {
     // --- Hàm Tiện ích ---
 
     private void savePaymentLog(Order order, String responseJson, String transactionType) {
+
+        if (paymentLogRepository.existsByGatewayOrderId(order.getPaymentReference())) {
+            log.warn("Duplicate log detected for gateway_order_id={}, skip saving.", order.getPaymentReference());
+            return;
+        }
+
         PaymentLog log = PaymentLog.builder()
                 .order(order)
-                .status(order.getStatus()) // Lấy status hiện tại của Order
+                .amount(order.getTransactionValue()) // hoặc lấy pack.getPackValue() nếu muốn ghi giá tiền
+                .gatewayOrderId(order.getPaymentReference())
+                .paymentGateway("PAYPAL")
                 .requestBody(transactionType)
                 .responseBody(responseJson)
-                // ĐIỀU CHỈNH: gatewayOrderId nên dùng Payment ID hoặc Order ID
-                .gatewayOrderId(order.getPaymentReference() != null ? order.getPaymentReference() : order.getOrderId().toString())
+                .responseCode(0)
+                .status(order.getStatus())
                 .build();
+
         paymentLogRepository.save(log);
     }
 }

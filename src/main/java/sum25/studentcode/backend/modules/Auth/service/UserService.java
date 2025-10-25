@@ -33,10 +33,11 @@ public class UserService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole() != null ? request.getRole() : Role.STUDENT)
                 .build();
+        User savedUser = userRepository.save(user);
         // ✅ Tạo wallet mặc định cho user mới
         walletService.initializeNewWallet(user);
 
-        return userRepository.save(user);
+        return savedUser;
     }
 
     public UserResponse getUserByUsername(String username) {

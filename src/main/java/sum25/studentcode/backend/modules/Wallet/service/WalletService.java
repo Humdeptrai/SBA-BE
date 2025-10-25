@@ -29,6 +29,8 @@ public interface WalletService {
 
     void save(Wallet wallet); // Dành cho nội bộ
 
+    WalletResponse getWalletsByUserId(Long userId);
+
 
 
     // CHỨC NĂNG CỘT LÕI: Thay đổi số dư được kiểm soát (Deposit/Withdraw)
