@@ -38,12 +38,6 @@ public class PracticeSession {
     @Column(name = "session_name")
     private String sessionName;
 
-    @Column(name = "start_time")
-    private LocalDateTime startTime;
-
-    @Column(name = "end_time")
-    private LocalDateTime endTime;
-
     @Column(name = "is_active")
     private Boolean isActive;
 
@@ -65,5 +59,11 @@ public class PracticeSession {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "matrix_id", nullable = false)
     private Matrix matrix;
+
+    @Column(name = "current_participants")
+    private Integer currentParticipants = 0; // đếm người đã tham gia
+
+    @Column(name = "auto_close")
+    private Boolean autoClose = true; // cho phép tự động đóng khi hết giờ
 
 }

@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "lesson")
@@ -44,5 +46,14 @@ public class Lesson {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
+
+    @OneToMany(mappedBy = "lesson", fetch = FetchType.LAZY)
+    private List<Questions> questions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "lesson", fetch = FetchType.LAZY)
+    private List<Matrix> matrices = new ArrayList<>();
+
+    @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Exam> exams = new ArrayList<>();
+
 }

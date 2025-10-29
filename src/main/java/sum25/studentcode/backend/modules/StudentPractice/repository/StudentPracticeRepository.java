@@ -11,7 +11,6 @@ import java.util.List;
 public interface StudentPracticeRepository extends JpaRepository<StudentPractice, Long> {
     boolean existsByPracticeSessionAndStudent(PracticeSession session, User student);
 
-    List<StudentPractice> findByStatusAndPracticeSession_EndTimeBefore(
-            StudentPractice.PracticeStatus status, LocalDateTime endTime);
+    List<StudentPractice> findByStatus(StudentPractice.PracticeStatus status);
 
 }

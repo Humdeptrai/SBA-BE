@@ -47,4 +47,9 @@ public class Matrix {
     
     @OneToMany(mappedBy = "matrix", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<MatrixQuestion> matrixQuestions = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lesson_id")
+    private Lesson lesson;
+
 }

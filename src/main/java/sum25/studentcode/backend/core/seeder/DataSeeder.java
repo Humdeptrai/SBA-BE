@@ -98,13 +98,15 @@ public class DataSeeder implements CommandLineRunner {
 
         // 6️⃣ EXAM
         if (examRepository.count() == 0) {
+            Lesson lesson = lessonRepository.findAll().get(0);
             examRepository.save(
                     Exam.builder()
+                            .lesson(lesson) // ✅ gắn exam với lesson
                             .examName("Math Entrance Test")
                             .examCode("MATH001")
                             .description("Initial placement test for students")
                             .durationMinutes(30)
-                            .examDate(LocalDateTime.now().plusDays(3))
+                            .examDate(LocalDateTime.now().plusDays(3)) // bắt đầu sau 3 ngày
                             .isActive(true)
                             .build()
             );
@@ -114,6 +116,7 @@ public class DataSeeder implements CommandLineRunner {
         if (matrixRepository.count() == 0) {
             Matrix matrix = Matrix.builder()
                     .exam(examRepository.findAll().get(0))
+                    .lesson(lessonRepository.findAll().get(0))
                     .matrixName("Math Matrix 1")
                     .description("Basic matrix structure for exam")
                     .totalQuestions(3)
@@ -170,10 +173,10 @@ public class DataSeeder implements CommandLineRunner {
                     .sessionName("Math Practice Session 1")
                     .sessionCode("MATH001")
                     .teacher(teacher)
-                    .startTime(LocalDateTime.now())
-                    .endTime(LocalDateTime.now().plusHours(1))
                     .isActive(true)
                     .maxParticipants(30)
+                    .currentParticipants(0)
+                    .autoClose(true)
                     .build();
 
             practiceSessionRepository.save(session);

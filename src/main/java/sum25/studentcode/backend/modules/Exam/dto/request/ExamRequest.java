@@ -11,4 +11,5 @@ public class ExamRequest {
     private String description;
     private Integer durationMinutes;
     private LocalDateTime examDate;
+    private Long lessonId;
 }

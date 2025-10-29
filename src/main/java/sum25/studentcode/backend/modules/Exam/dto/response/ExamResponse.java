@@ -14,4 +14,6 @@ public class ExamResponse {
     private LocalDateTime examDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long lessonId;
+
 }

@@ -47,7 +47,7 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
 
     @Override
     public List<PracticeQuestionResponse> getQuestionsForPractice(Long practiceId) {
-        // 1. Lấy practice + user
+        // 1) Lấy practice + kiểm tra quyền
         StudentPractice practice = studentPracticeRepository.findById(practiceId)
                 .orElseThrow(() -> new ApiException("PRACTICE_NOT_FOUND", "Không tìm thấy lượt luyện tập.", 404));
 
@@ -60,56 +60,71 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
             throw new ApiException("ACCESS_DENIED", "Bạn không có quyền truy cập bài luyện tập này.", 403);
         }
 
-        // 2. Kiểm tra session
+        // 2) Kiểm tra session
         PracticeSession session = practice.getPracticeSession();
-        if (session == null)
+        if (session == null) {
             throw new ApiException("SESSION_NOT_FOUND", "Buổi luyện tập không tồn tại.", 404);
-        if (!session.getIsActive())
+        }
+        if (session.getIsActive() == null || !session.getIsActive()) {
             throw new ApiException("SESSION_INACTIVE", "Buổi luyện tập không hoạt động.", 400);
+        }
 
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(session.getStartTime()) || now.isAfter(session.getEndTime()))
-            throw new ApiException("SESSION_TIME_INVALID", "Hiện không trong thời gian làm bài.", 400);
-
-        // 3. Kiểm tra trạng thái practice
-        if (practice.getStatus() != StudentPractice.PracticeStatus.IN_PROGRESS)
-            throw new ApiException("INVALID_STATUS", "Chỉ xem đề khi đang làm bài (IN_PROGRESS).", 400);
-
-        // 4. Lấy câu hỏi từ Matrix
+        // 3) Lấy Matrix & Exam và kiểm tra cửa sổ thời gian từ Exam
         Matrix matrix = session.getMatrix();
-        if (matrix == null)
-            throw new ApiException("MATRIX_NOT_FOUND", "Buổi luyện tập chưa gắn ma trận đề thi.", 404);
+        if (matrix == null || matrix.getExam() == null) {
+            throw new ApiException("EXAM_NOT_FOUND", "Buổi luyện tập chưa gắn bài thi.", 500);
+        }
+        Exam exam = matrix.getExam();
+        if (exam.getExamDate() == null || exam.getDurationMinutes() == null) {
+            throw new ApiException("EXAM_TIME_INVALID", "Bài thi chưa cấu hình thời gian.", 500);
+        }
 
-        // (Optional) Cập nhật thời gian bắt đầu làm
+        LocalDateTime start = exam.getExamDate();
+        LocalDateTime end   = start.plusMinutes(exam.getDurationMinutes());
+        LocalDateTime now   = LocalDateTime.now();
+
+        if (now.isBefore(start) || now.isAfter(end)) {
+            throw new ApiException("SESSION_TIME_INVALID", "Hiện không trong thời gian làm bài.", 400);
+        }
+
+        // 4) Kiểm tra trạng thái practice
+        if (practice.getStatus() != StudentPractice.PracticeStatus.IN_PROGRESS) {
+            throw new ApiException("INVALID_STATUS", "Chỉ xem đề khi đang làm bài (IN_PROGRESS).", 400);
+        }
+
+        // 5) (Optional) Ghi nhận thời điểm bắt đầu làm
         if (practice.getPerTime() == null) {
             practice.setPerTime(LocalDateTime.now());
             studentPracticeRepository.save(practice);
         }
 
-        // 5. Trả câu hỏi như trước
+        // 6) Lấy câu hỏi từ Matrix
         List<MatrixQuestion> mqs = matrixQuestionRepository.findByMatrix_MatrixId(matrix.getMatrixId());
-        if (mqs.isEmpty())
+        if (mqs.isEmpty()) {
             throw new ApiException("MATRIX_EMPTY", "Đề thi chưa có câu hỏi.", 404);
+        }
 
+        // 7) Map về DTO có kèm options
         return mqs.stream().map(mq -> {
             Questions q = mq.getQuestion();
             PracticeQuestionResponse dto = new PracticeQuestionResponse();
             dto.setQuestionId(q.getQuestionId());
             dto.setQuestionText(q.getQuestionText());
-            dto.setOptions(optionsRepository.findByQuestion_QuestionId(q.getQuestionId())
-                    .stream()
-                    .map(o -> {
-                        PracticeQuestionResponse.OptionItem opt = new PracticeQuestionResponse.OptionItem();
-                        opt.setOptionId(o.getOptionId());
-                        opt.setOptionText(o.getOptionText());
-                        opt.setOptionOrder(o.getOptionOrder());
-                        return opt;
-                    })
-                    .toList());
+            dto.setOptions(
+                    optionsRepository.findByQuestion_QuestionId(q.getQuestionId())
+                            .stream()
+                            .map(o -> {
+                                PracticeQuestionResponse.OptionItem opt = new PracticeQuestionResponse.OptionItem();
+                                opt.setOptionId(o.getOptionId());
+                                opt.setOptionText(o.getOptionText());
+                                opt.setOptionOrder(o.getOptionOrder());
+                                return opt;
+                            })
+                            .toList()
+            );
             return dto;
         }).toList();
     }
-
 
     @Override
     public List<StudentPracticeResponse> getAllStudentPractices() {
@@ -143,10 +158,23 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
         if (!session.getIsActive())
             throw new ApiException("SESSION_INACTIVE", "Buổi luyện tập này đã bị khóa hoặc không còn hoạt động.", 400);
 
-        // 🔹 Kiểm tra thời gian hợp lệ
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(session.getStartTime()) || now.isAfter(session.getEndTime()))
+        Matrix matrix = session.getMatrix();
+        if (matrix == null || matrix.getExam() == null) {
+            throw new ApiException("EXAM_NOT_FOUND", "Buổi luyện tập chưa gắn bài thi.", 500);
+        }
+        Exam exam = matrix.getExam();
+        if (exam.getExamDate() == null || exam.getDurationMinutes() == null) {
+            throw new ApiException("EXAM_TIME_INVALID", "Bài thi chưa cấu hình thời gian.", 500);
+        }
+
+        LocalDateTime start = exam.getExamDate();
+        LocalDateTime end   = start.plusMinutes(exam.getDurationMinutes());
+        LocalDateTime now   = LocalDateTime.now();
+
+        if (now.isBefore(start) || now.isAfter(end)) {
             throw new ApiException("SESSION_TIME_INVALID", "Không thể nộp bài ngoài thời gian làm bài.", 400);
+        }
+
 
         // 🔹 Kiểm tra trạng thái
         if (practice.getStatus() != StudentPractice.PracticeStatus.IN_PROGRESS) {
@@ -260,59 +288,100 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
 
     @Override
     public StudentEnrollResponse enrollStudent(StudentEnrollRequest request) {
-        // ✅ Lấy user hiện đang đăng nhập
+        // ✅ 1. Lấy user hiện đang đăng nhập
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
-        System.out.println("DEBUG username from token = " + username);
         User student = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Authenticated student not found"));
+                .orElseThrow(() -> new ApiException(
+                        "USER_NOT_FOUND",
+                        "Không tìm thấy thông tin người dùng từ token.",
+                        404
+                ));
 
-        // ✅ Lấy session
+        // ✅ 2. Lấy session
         PracticeSession session = practiceSessionRepository.findBySessionCode(request.getSessionCode())
-                .orElseThrow(() -> new RuntimeException("Session not found or invalid code"));
+                .orElseThrow(() -> new ApiException(
+                        "SESSION_NOT_FOUND",
+                        "Không tìm thấy buổi luyện tập hoặc mã code không hợp lệ.",
+                        404
+                ));
 
         if (!session.getIsActive()) {
-            throw new RuntimeException("This practice session is not active.");
+            throw new ApiException(
+                    "SESSION_INACTIVE",
+                    "Buổi luyện tập này hiện không hoạt động.",
+                    400
+            );
         }
 
-        // ✅ Kiểm tra nếu đã đăng ký buổi này
+        // ✅ 3. Lấy thông tin Exam từ Matrix
+        Matrix matrix = session.getMatrix();
+        if (matrix == null || matrix.getExam() == null) {
+            throw new ApiException(
+                    "EXAM_NOT_FOUND",
+                    "Buổi luyện tập này chưa được gắn bài thi.",
+                    500
+            );
+        }
+
+        Exam exam = matrix.getExam();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime start = exam.getExamDate();
+        LocalDateTime end = start.plusMinutes(exam.getDurationMinutes());
+
+        // ✅ 4. Kiểm tra thời gian hợp lệ
+        if (now.isBefore(start)) {
+            throw new ApiException(
+                    "SESSION_NOT_STARTED",
+                    "Bài thi chưa đến thời gian bắt đầu. Vui lòng quay lại sau.",
+                    400
+            );
+        }
+
+        if (now.isAfter(end)) {
+            throw new ApiException(
+                    "SESSION_ENDED",
+                    "Bài thi đã kết thúc, không thể tham gia.",
+                    400
+            );
+        }
+
+        // ✅ 5. Kiểm tra nếu học sinh đã tham gia
         boolean exists = studentPracticeRepository.existsByPracticeSessionAndStudent(session, student);
         if (exists) {
-            throw new RuntimeException("Student already enrolled in this session.");
+            throw new ApiException(
+                    "ALREADY_ENROLLED",
+                    "Bạn đã tham gia buổi luyện tập này rồi.",
+                    400
+            );
         }
 
-        // ✅ Lấy thông tin matrix và exam
-        var matrix = session.getMatrix();
-        if (matrix == null) {
-            throw new RuntimeException("This session is not linked to any matrix.");
-        }
-
-        var exam = matrix.getExam(); // có thể null nếu matrix chưa gắn exam
-
-        // ✅ Tạo bản ghi StudentPractice
+        // ✅ 6. Tạo bản ghi StudentPractice
         StudentPractice practice = StudentPractice.builder()
                 .practiceSession(session)
                 .student(student)
-                .examCode(exam != null ? exam.getExamCode() : null)
+                .examCode(exam.getExamCode())
                 .status(StudentPractice.PracticeStatus.IN_PROGRESS)
                 .perTime(LocalDateTime.now())
                 .build();
-
         studentPracticeRepository.save(practice);
 
-        // ✅ Trả về thông tin session
-        StudentEnrollResponse response = new StudentEnrollResponse();
-        response.setPracticeId(practice.getPracticeId());
-        response.setSessionId(session.getSessionId());
-        response.setSessionName(session.getSessionName());
-        response.setExamName(exam != null ? exam.getExamName() : "(Matrix chưa gắn Exam)");
-        response.setStartTime(session.getStartTime());
-        response.setEndTime(session.getEndTime());
-        response.setStatus(practice.getStatus().name());
-        return response;
+        // ✅ 7. Cập nhật số lượng tham gia
+        if (session.getCurrentParticipants() == null) session.setCurrentParticipants(0);
+        session.setCurrentParticipants(session.getCurrentParticipants() + 1);
+        practiceSessionRepository.save(session);
+
+        // ✅ 8. Trả về response
+        return StudentEnrollResponse.builder()
+                .practiceId(practice.getPracticeId())
+                .sessionId(session.getSessionId())
+                .sessionName(session.getSessionName())
+                .examName(exam.getExamName())
+                .startTime(start)
+                .endTime(end)
+                .status(practice.getStatus().name())
+                .build();
     }
-
-
 
 
     private StudentPracticeResponse convertToResponse(StudentPractice studentPractice) {

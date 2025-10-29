@@ -53,5 +53,9 @@ public class Exam {
     @OneToMany(mappedBy = "exam", fetch = FetchType.LAZY)
     private List<PracticeSession> practiceSessions = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lesson_id")
+    private Lesson lesson;
+
 
 }
