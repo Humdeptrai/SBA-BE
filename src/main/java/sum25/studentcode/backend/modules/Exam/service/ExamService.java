@@ -11,4 +11,6 @@ public interface ExamService {
     List<ExamResponse> getAllExams();
     ExamResponse updateExam(Long id, ExamRequest request);
     void deleteExam(Long id);
+    List<ExamResponse> getExamsByLesson(Long lessonId);
+
 }

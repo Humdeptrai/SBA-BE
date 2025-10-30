@@ -1,5 +1,6 @@
 package sum25.studentcode.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -17,7 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "examId")
-@ToString(exclude = {"subject", "practiceSessions"})
+@ToString(exclude = {"lesson", "practiceSessions"})
 public class Exam {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +37,8 @@ public class Exam {
     @Column(name = "duration_minutes")
     private Integer durationMinutes;
 
+    // ✅ Thêm JsonFormat cho examDate
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     @Column(name = "exam_date")
     private LocalDateTime examDate;
 
@@ -43,10 +46,12 @@ public class Exam {
     private Boolean isActive = true;
 
     @CreationTimestamp
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -56,6 +61,4 @@ public class Exam {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lesson_id")
     private Lesson lesson;
-
-
 }

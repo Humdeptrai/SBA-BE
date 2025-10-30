@@ -31,8 +31,9 @@ public class AutoSubmitScheduler {
         LocalDateTime now = LocalDateTime.now();
 
         // 1️⃣ Lấy tất cả practice đang làm
-        List<StudentPractice> inProgress = studentPracticeRepository
-                .findByStatus(StudentPractice.PracticeStatus.IN_PROGRESS);
+        List<StudentPractice> inProgress =
+                studentPracticeRepository.findWithSessionAndExamByStatus(StudentPractice.PracticeStatus.IN_PROGRESS);
+
 
         if (inProgress.isEmpty()) return;
 

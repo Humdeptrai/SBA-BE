@@ -39,4 +39,10 @@ public class ExamController {
     public void deleteExam(@PathVariable Long id) {
         examService.deleteExam(id);
     }
+
+    @GetMapping("/lesson/{lessonId}")
+    public List<ExamResponse> getExamsByLesson(@PathVariable Long lessonId) {
+        return examService.getExamsByLesson(lessonId);
+    }
+
 }

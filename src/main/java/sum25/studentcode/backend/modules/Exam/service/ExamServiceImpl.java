@@ -185,4 +185,23 @@ public class ExamServiceImpl implements ExamService {
 
         return response;
     }
+
+    @Override
+    public List<ExamResponse> getExamsByLesson(Long lessonId) {
+        // ✅ Kiểm tra bài học tồn tại
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new ApiException(
+                        "LESSON_NOT_FOUND",
+                        "Không tìm thấy bài học với ID = " + lessonId,
+                        404
+                ));
+
+        // ✅ Tìm tất cả bài thi thuộc bài học đó
+        List<Exam> exams = examRepository.findByLesson_LessonId(lessonId);
+
+        return exams.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
 }

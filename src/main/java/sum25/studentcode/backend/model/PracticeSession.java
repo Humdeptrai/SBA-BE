@@ -28,7 +28,7 @@ public class PracticeSession {
     @JoinColumn(name = "exam_id", referencedColumnName = "exam_id")
     private Exam exam;
 
-    @Column(name = "session_code", unique = true)
+    @Column(name = "session_code")
     private String sessionCode;
 
     @ManyToOne(fetch = FetchType.LAZY)

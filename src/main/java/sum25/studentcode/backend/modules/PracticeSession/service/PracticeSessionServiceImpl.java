@@ -43,6 +43,7 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         // ✅ Tạo mới session (không còn startTime / endTime)
         PracticeSession session = PracticeSession.builder()
                 .matrix(matrix)
+                .exam(matrix.getExam())
                 .sessionCode(request.getSessionCode())
                 .teacher(teacher)
                 .sessionName(request.getSessionName())
@@ -91,6 +92,7 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
 
         // ✅ Cập nhật thông tin
         session.setMatrix(matrix);
+        session.setExam(matrix.getExam());
         session.setTeacher(teacher);
         session.setSessionCode(request.getSessionCode());
         session.setSessionName(request.getSessionName());

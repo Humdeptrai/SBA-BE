@@ -346,16 +346,6 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
             );
         }
 
-        // ✅ 5. Kiểm tra nếu học sinh đã tham gia
-        boolean exists = studentPracticeRepository.existsByPracticeSessionAndStudent(session, student);
-        if (exists) {
-            throw new ApiException(
-                    "ALREADY_ENROLLED",
-                    "Bạn đã tham gia buổi luyện tập này rồi.",
-                    400
-            );
-        }
-
         // ✅ 6. Tạo bản ghi StudentPractice
         StudentPractice practice = StudentPractice.builder()
                 .practiceSession(session)
