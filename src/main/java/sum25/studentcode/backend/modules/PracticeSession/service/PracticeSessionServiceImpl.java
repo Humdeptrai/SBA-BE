@@ -140,6 +140,21 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         practiceSessionRepository.deleteById(id);
     }
 
+    /** ✅ Lấy danh sách buổi luyện tập theo Lesson */
+    @Override
+    public List<PracticeSessionResponse> getPracticeSessionsByLessonId(Long lessonId) {
+        List<PracticeSession> sessions = practiceSessionRepository.findByLesson_LessonId(lessonId);
+
+        if (sessions.isEmpty()) {
+            throw new ApiException("EMPTY_LIST", "Chưa có buổi luyện tập nào cho bài học này.", 404);
+        }
+
+        return sessions.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+
     /** ✅ Convert sang Response DTO */
     private PracticeSessionResponse convertToResponse(PracticeSession entity) {
         PracticeSessionResponse res = new PracticeSessionResponse();

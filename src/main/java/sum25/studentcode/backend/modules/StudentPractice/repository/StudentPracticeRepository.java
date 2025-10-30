@@ -8,6 +8,7 @@ import sum25.studentcode.backend.model.StudentPractice;
 import sum25.studentcode.backend.model.User;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface StudentPracticeRepository extends JpaRepository<StudentPractice, Long> {
@@ -20,4 +21,7 @@ public interface StudentPracticeRepository extends JpaRepository<StudentPractice
         WHERE sp.status = :status
     """)
     List<StudentPractice> findWithSessionByStatus(StudentPractice.PracticeStatus status);
+
+    // StudentPracticeRepository.java
+    Optional<StudentPractice> findByPracticeSessionAndStudent(PracticeSession practiceSession, User student);
 }

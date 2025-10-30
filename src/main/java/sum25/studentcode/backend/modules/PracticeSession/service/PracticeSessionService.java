@@ -11,4 +11,7 @@ public interface PracticeSessionService {
     List<PracticeSessionResponse> getAllPracticeSessions();
     PracticeSessionResponse updatePracticeSession(Long id, PracticeSessionRequest request);
     void deletePracticeSession(Long id);
+    List<PracticeSessionResponse> getPracticeSessionsByLessonId(Long lessonId);
+
+
 }

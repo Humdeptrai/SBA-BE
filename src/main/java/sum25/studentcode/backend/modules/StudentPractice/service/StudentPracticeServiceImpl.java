@@ -21,8 +21,10 @@ import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPract
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -196,7 +198,7 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
         PracticeSession session = practiceSessionRepository.findById(request.getSessionId())
                 .orElseThrow(() -> new ApiException("SESSION_NOT_FOUND", "Không tìm thấy buổi luyện tập này.", 404));
 
-        // ✅ Kiểm tra sessionCode đúng (nếu FE truyền sai code)
+        // ✅ Kiểm tra sessionCode đúng
         if (!session.getSessionCode().equals(request.getSessionCode())) {
             throw new ApiException("INVALID_SESSION_CODE", "Mã code không khớp với buổi luyện tập.", 400);
         }
@@ -206,10 +208,15 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
             throw new ApiException("SESSION_INACTIVE", "Buổi luyện tập này hiện không hoạt động.", 400);
         }
 
-        // ✅ Kiểm tra thời gian hợp lệ
-        LocalDateTime now = LocalDateTime.now();
+        // ✅ Kiểm tra thời gian hợp lệ - SỬ DỤNG TIMEZONE VN
+        ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
+        LocalDateTime now = LocalDateTime.now(vnZone);
         LocalDateTime start = session.getExamDate();
         LocalDateTime end = start.plusMinutes(session.getDurationMinutes());
+
+        System.out.println("🕒 [ENROLL] Giờ hiện tại VN: " + now);
+        System.out.println("🕒 [ENROLL] Giờ bắt đầu: " + start);
+        System.out.println("🕒 [ENROLL] Giờ kết thúc: " + end);
 
         if (now.isBefore(start)) {
             throw new ApiException("SESSION_NOT_STARTED", "Bài thi chưa đến thời gian bắt đầu.", 400);
@@ -219,25 +226,40 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
         }
 
         // ✅ Check học sinh đã enroll chưa
-        boolean exists = studentPracticeRepository.existsByPracticeSessionAndStudent(session, student);
-        if (exists) {
-            throw new ApiException("ALREADY_ENROLLED", "Bạn đã tham gia buổi luyện tập này rồi.", 400);
+        Optional<StudentPractice> existingPractice =
+                studentPracticeRepository.findByPracticeSessionAndStudent(session, student);
+
+        StudentPractice practice;
+
+        if (existingPractice.isPresent()) {
+            // ✅ Đã có rồi → cho phép vào lại (không tạo mới)
+            practice = existingPractice.get();
+
+            // ✅ Kiểm tra nếu đã nộp bài rồi thì không cho vào
+            if (practice.getStatus() == StudentPractice.PracticeStatus.SUBMITTED) {
+                throw new ApiException("ALREADY_SUBMITTED",
+                        "Bạn đã nộp bài thi này rồi. Không thể làm lại.", 400);
+            }
+
+            System.out.println("✅ [ENROLL] Student re-entering exam. PracticeId: " + practice.getPracticeId());
+        } else {
+            // ✅ Lần đầu enroll → tạo mới
+            practice = StudentPractice.builder()
+                    .practiceSession(session)
+                    .student(student)
+                    .status(StudentPractice.PracticeStatus.IN_PROGRESS)
+                    .perTime(now) // Lưu thời điểm bắt đầu làm
+                    .build();
+
+            studentPracticeRepository.save(practice);
+
+            // ✅ Cập nhật số lượng tham gia (chỉ tăng lần đầu)
+            if (session.getCurrentParticipants() == null) session.setCurrentParticipants(0);
+            session.setCurrentParticipants(session.getCurrentParticipants() + 1);
+            practiceSessionRepository.save(session);
+
+            System.out.println("✅ [ENROLL] New student enrolled. PracticeId: " + practice.getPracticeId());
         }
-
-        // ✅ Tạo bản ghi mới
-        StudentPractice practice = StudentPractice.builder()
-                .practiceSession(session)
-                .student(student)
-                .status(StudentPractice.PracticeStatus.IN_PROGRESS)
-                .perTime(LocalDateTime.now())
-                .build();
-
-        studentPracticeRepository.save(practice);
-
-        // ✅ Cập nhật số lượng tham gia
-        if (session.getCurrentParticipants() == null) session.setCurrentParticipants(0);
-        session.setCurrentParticipants(session.getCurrentParticipants() + 1);
-        practiceSessionRepository.save(session);
 
         // ✅ Trả về response
         return StudentEnrollResponse.builder()

@@ -8,5 +8,5 @@ import java.util.List;
 public interface PracticeSessionRepository extends JpaRepository<PracticeSession, Long> {
     List<PracticeSession> findAllBySessionCode(String sessionCode);
     boolean existsByLesson_LessonIdAndSessionNameIgnoreCase(Long lessonId, String sessionName);
-
+    List<PracticeSession> findByLesson_LessonId(Long lessonId);
 }
