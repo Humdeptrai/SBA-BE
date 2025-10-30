@@ -6,10 +6,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.core.exception.ApiException;
+import sum25.studentcode.backend.model.Lesson;
 import sum25.studentcode.backend.model.Matrix;
 import sum25.studentcode.backend.model.PracticeSession;
 import sum25.studentcode.backend.model.User;
 import sum25.studentcode.backend.modules.Auth.repository.UserRepository;
+import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
 import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
 import sum25.studentcode.backend.modules.PracticeSession.dto.request.PracticeSessionRequest;
 import sum25.studentcode.backend.modules.PracticeSession.dto.response.PracticeSessionResponse;
@@ -25,9 +27,10 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
 
     private final PracticeSessionRepository practiceSessionRepository;
     private final MatrixRepository matrixRepository;
+    private final LessonRepository lessonRepository;
     private final UserRepository userRepository;
 
-    /** ✅ Tạo buổi luyện tập mới */
+    /** ✅ Tạo buổi luyện tập / bài thi mới */
     @Override
     public PracticeSessionResponse createPracticeSession(PracticeSessionRequest request) {
         // ✅ Lấy teacher từ token
@@ -36,21 +39,35 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         User teacher = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ApiException("USER_NOT_FOUND", "Không tìm thấy người dùng từ token.", 404));
 
+        // ✅ Kiểm tra Lesson tồn tại
+        Lesson lesson = lessonRepository.findById(request.getLessonId())
+                .orElseThrow(() -> new ApiException("LESSON_NOT_FOUND", "Không tìm thấy bài học.", 404));
+
         // ✅ Kiểm tra Matrix tồn tại
         Matrix matrix = matrixRepository.findById(request.getMatrixId())
                 .orElseThrow(() -> new ApiException("MATRIX_NOT_FOUND", "Không tìm thấy ma trận đề thi.", 404));
 
-        // ✅ Tạo mới session (không còn startTime / endTime)
+        // ✅ Check trùng tên trong cùng 1 Lesson
+        boolean exists = practiceSessionRepository
+                .existsByLesson_LessonIdAndSessionNameIgnoreCase(request.getLessonId(), request.getSessionName());
+        if (exists) {
+            throw new ApiException("DUPLICATE_SESSION_NAME",
+                    "Tên buổi luyện tập đã tồn tại trong bài học này.", 400);
+        }
+
+        // ✅ Tạo mới session (isActive mặc định true)
         PracticeSession session = PracticeSession.builder()
+                .lesson(lesson)
                 .matrix(matrix)
-                .exam(matrix.getExam())
-                .sessionCode(request.getSessionCode())
                 .teacher(teacher)
+                .sessionCode(request.getSessionCode())
                 .sessionName(request.getSessionName())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                .description(request.getDescription())
+                .isActive(true)
                 .maxParticipants(request.getMaxParticipants() != null ? request.getMaxParticipants() : 50)
                 .currentParticipants(0)
-                .autoClose(true)
+                .examDate(request.getExamDate())
+                .durationMinutes(request.getDurationMinutes())
                 .build();
 
         session = practiceSessionRepository.save(session);
@@ -62,7 +79,6 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
     public PracticeSessionResponse getPracticeSessionById(Long id) {
         PracticeSession session = practiceSessionRepository.findById(id)
                 .orElseThrow(() -> new ApiException("SESSION_NOT_FOUND", "Không tìm thấy buổi luyện tập.", 404));
-
         return convertToResponse(session);
     }
 
@@ -76,7 +92,7 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         return list.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
 
-    /** ✅ Cập nhật thông tin buổi luyện tập */
+    /** ✅ Cập nhật buổi luyện tập */
     @Override
     public PracticeSessionResponse updatePracticeSession(Long id, PracticeSessionRequest request) {
         PracticeSession session = practiceSessionRepository.findById(id)
@@ -85,21 +101,34 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         Matrix matrix = matrixRepository.findById(request.getMatrixId())
                 .orElseThrow(() -> new ApiException("MATRIX_NOT_FOUND", "Không tìm thấy ma trận đề thi.", 404));
 
+        Lesson lesson = lessonRepository.findById(request.getLessonId())
+                .orElseThrow(() -> new ApiException("LESSON_NOT_FOUND", "Không tìm thấy bài học.", 404));
+
+        // ✅ Check trùng tên trong lesson (trừ chính nó)
+        boolean exists = practiceSessionRepository
+                .existsByLesson_LessonIdAndSessionNameIgnoreCase(request.getLessonId(), request.getSessionName());
+        if (exists && !session.getSessionName().equalsIgnoreCase(request.getSessionName())) {
+            throw new ApiException("DUPLICATE_SESSION_NAME",
+                    "Tên buổi luyện tập đã tồn tại trong bài học này.", 400);
+        }
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         User teacher = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ApiException("USER_NOT_FOUND", "Không tìm thấy người dùng từ token.", 404));
 
         // ✅ Cập nhật thông tin
+        session.setLesson(lesson);
         session.setMatrix(matrix);
-        session.setExam(matrix.getExam());
         session.setTeacher(teacher);
         session.setSessionCode(request.getSessionCode());
         session.setSessionName(request.getSessionName());
-        session.setIsActive(request.getIsActive());
+        session.setDescription(request.getDescription());
         session.setMaxParticipants(request.getMaxParticipants());
+        session.setExamDate(request.getExamDate());
+        session.setDurationMinutes(request.getDurationMinutes());
 
-        practiceSessionRepository.save(session);
+        session = practiceSessionRepository.save(session);
         return convertToResponse(session);
     }
 
@@ -108,22 +137,25 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
     public void deletePracticeSession(Long id) {
         if (!practiceSessionRepository.existsById(id))
             throw new ApiException("SESSION_NOT_FOUND", "Không tìm thấy buổi luyện tập.", 404);
-
         practiceSessionRepository.deleteById(id);
     }
 
-    /** ✅ Chuyển đổi sang Response DTO */
+    /** ✅ Convert sang Response DTO */
     private PracticeSessionResponse convertToResponse(PracticeSession entity) {
         PracticeSessionResponse res = new PracticeSessionResponse();
+        res.setLessonId(entity.getLesson().getLessonId());
         res.setSessionId(entity.getSessionId());
         res.setMatrixId(entity.getMatrix().getMatrixId());
-        res.setExamId(entity.getMatrix().getExam().getExamId());
+        res.setMatrixName(entity.getMatrix().getMatrixName());
         res.setSessionCode(entity.getSessionCode());
         res.setTeacherId(entity.getTeacher().getUserId());
         res.setSessionName(entity.getSessionName());
+        res.setDescription(entity.getDescription());
         res.setIsActive(entity.getIsActive());
         res.setMaxParticipants(entity.getMaxParticipants());
         res.setCurrentParticipants(entity.getCurrentParticipants());
+        res.setExamDate(entity.getExamDate());
+        res.setDurationMinutes(entity.getDurationMinutes());
         res.setCreatedAt(entity.getCreatedAt());
         res.setUpdatedAt(entity.getUpdatedAt());
         return res;

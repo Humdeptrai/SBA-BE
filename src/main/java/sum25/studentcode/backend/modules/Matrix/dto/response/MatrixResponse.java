@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 @Data
 public class MatrixResponse {
     private Long matrixId;
-    private Long examId;
     private String matrixName;
     private String description;
     private Integer totalQuestions;

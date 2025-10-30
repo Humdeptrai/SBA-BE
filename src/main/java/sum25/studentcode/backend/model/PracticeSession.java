@@ -1,5 +1,6 @@
 package sum25.studentcode.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,9 +25,8 @@ public class PracticeSession {
     @Column(name = "session_id")
     private Long sessionId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "exam_id", referencedColumnName = "exam_id")
-    private Exam exam;
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "session_code")
     private String sessionCode;
@@ -39,10 +39,18 @@ public class PracticeSession {
     private String sessionName;
 
     @Column(name = "is_active")
-    private Boolean isActive;
+    private Boolean isActive=true;
 
     @Column(name = "max_participants")
     private Integer maxParticipants;
+
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    // ✅ Thêm JsonFormat cho examDate
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
+    @Column(name = "exam_date")
+    private LocalDateTime examDate;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -66,4 +74,7 @@ public class PracticeSession {
     @Column(name = "auto_close")
     private Boolean autoClose = true; // cho phép tự động đóng khi hết giờ
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lesson_id")
+    private Lesson lesson;
 }

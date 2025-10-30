@@ -3,7 +3,6 @@ package sum25.studentcode.backend.modules.StudentPractice.scheduler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import sum25.studentcode.backend.model.Exam;
 import sum25.studentcode.backend.model.PracticeSession;
 import sum25.studentcode.backend.model.StudentPractice;
 import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
@@ -23,17 +22,16 @@ public class AutoSubmitScheduler {
 
     /**
      * 🕐 Chạy mỗi 1 phút để auto-submit các bài làm đã hết giờ.
-     * Cửa sổ làm bài: end = exam.examDate + durationMinutes
+     * Cửa sổ làm bài: end = session.examDate + durationMinutes
      * Logic điểm: cộng tổng marksEarned trong student_answers.
      */
-    @Scheduled(fixedRate = 60_000) // ⏱ mỗi 1 phút
+    @Scheduled(fixedRate = 60_000) // ⏱ chạy mỗi phút
     public void autoSubmitExpiredPractices() {
         LocalDateTime now = LocalDateTime.now();
 
         // 1️⃣ Lấy tất cả practice đang làm
         List<StudentPractice> inProgress =
-                studentPracticeRepository.findWithSessionAndExamByStatus(StudentPractice.PracticeStatus.IN_PROGRESS);
-
+                studentPracticeRepository.findWithSessionByStatus(StudentPractice.PracticeStatus.IN_PROGRESS);
 
         if (inProgress.isEmpty()) return;
 
@@ -42,22 +40,20 @@ public class AutoSubmitScheduler {
         for (StudentPractice practice : inProgress) {
             try {
                 PracticeSession session = practice.getPracticeSession();
-                if (session == null || session.getMatrix() == null || session.getMatrix().getExam() == null) {
-                    continue; // thiếu liên kết cần thiết
-                }
+                if (session == null) continue;
 
-                Exam exam = session.getMatrix().getExam();
-                if (exam.getExamDate() == null || exam.getDurationMinutes() == null) {
-                    continue; // chưa cấu hình thời gian
-                }
+                // ✅ Lấy thời gian từ PracticeSession (không còn Exam)
+                LocalDateTime start = session.getExamDate();
+                Integer durationMinutes = session.getDurationMinutes();
+                if (start == null || durationMinutes == null) continue;
 
-                LocalDateTime start = exam.getExamDate();
-                LocalDateTime end = start.plusMinutes(exam.getDurationMinutes());
+                LocalDateTime end = start.plusMinutes(durationMinutes);
 
-                // 2️⃣ Nếu đã quá giờ thì auto-submit
+                // 2️⃣ Nếu quá giờ thì auto-submit
                 if (now.isAfter(end)) {
                     BigDecimal totalScore = BigDecimal.ZERO;
                     var answers = studentAnswersRepository.findByStudentPractice_PracticeId(practice.getPracticeId());
+
                     for (var ans : answers) {
                         totalScore = totalScore.add(
                                 ans.getMarksEarned() != null ? ans.getMarksEarned() : BigDecimal.ZERO

@@ -24,10 +24,6 @@ public class Matrix {
     @Column(name = "matrix_id")
     private Long matrixId;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "exam_id", referencedColumnName = "exam_id")
-    private Exam exam;
-    
     @Column(name = "matrix_name")
     private String matrixName;
     
@@ -51,5 +47,8 @@ public class Matrix {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lesson_id")
     private Lesson lesson;
+
+    @OneToMany(mappedBy = "matrix")
+    private List<PracticeSession> practiceSessions;
 
 }

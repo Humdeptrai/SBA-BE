@@ -53,7 +53,4 @@ public class Lesson {
     @OneToMany(mappedBy = "lesson", fetch = FetchType.LAZY)
     private List<Matrix> matrices = new ArrayList<>();
 
-    @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Exam> exams = new ArrayList<>();
-
 }
