@@ -11,6 +11,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.model.Order;
 import sum25.studentcode.backend.model.Pack;
 import sum25.studentcode.backend.model.PaymentLog;
@@ -211,47 +212,58 @@ public class PayPalService {
      * Logic cộng tiền, tạo Transaction chỉ được thực hiện tại đây.
      */
     public void processWebhook(String webhookEvent, Map<String, String> headers) throws Exception {
-        // 1. CHƯA TRIỂN KHAI: Xác thực Webhook.
-        // Trong môi trường sản phẩm, bước này là BẮT BUỘC để đảm bảo tính hợp lệ của request.
-        // Cần gọi API verifyWebhookSignature của PayPal.
-        // Tạm thời bỏ qua bước xác thực để tập trung vào logic cốt lõi.
+        log.info("🔔 Received PayPal webhook. Event size: {} chars", webhookEvent.length());
 
-        // 2. Phân tích cú pháp sự kiện
-        // ĐÃ SỬA: Thay WebhookEvent.class bằng DTO WebhookEventPayload.class
-        WebhookEventPayload event = objectMapper.readValue(webhookEvent, WebhookEventPayload.class);
-        String eventType = event.getEventType();
-        log.info("Processing Webhook Event Type: {}", eventType);
+        try {
+            // 1. CHƯA TRIỂN KHAI: Xác thực Webhook.
+            // Trong môi trường sản phẩm, bước này là BẮT BUỘC để đảm bảo tính hợp lệ của request.
+            // Cần gọi API verifyWebhookSignature của PayPal.
+            // Tạm thời bỏ qua bước xác thực để tập trung vào logic cốt lõi.
 
-        if ("PAYMENT.SALE.COMPLETED".equals(eventType)) {
-            // Sự kiện báo giao dịch đã hoàn tất và tiền đã về Merchant
-            // Ánh xạ resource (Map<String, Object>) thành đối tượng Sale
-            Sale sale = objectMapper.convertValue(event.getResource(), Sale.class);
+            // 2. Phân tích cú pháp sự kiện
+            WebhookEventPayload event = objectMapper.readValue(webhookEvent, WebhookEventPayload.class);
+            String eventType = event.getEventType();
+            log.info("📋 Processing Webhook Event Type: {}", eventType);
 
-            // paymentId là ID của Payment ban đầu
-            String paymentId = sale.getParentPayment();
+            if ("PAYMENT.SALE.COMPLETED".equals(eventType)) {
+                log.info("💰 Processing PAYMENT.SALE.COMPLETED event");
 
-            // Lấy Order từ paymentReference (paymentId đã lưu ở B1)
-            // ĐIỀU CHỈNH: Sử dụng paymentReference
-            Order order = orderService.getOrderByPaymentReference(paymentId);
+                // Sự kiện báo giao dịch đã hoàn tất và tiền đã về Merchant
+                Sale sale = objectMapper.convertValue(event.getResource(), Sale.class);
+                String paymentId = sale.getParentPayment();
+                String saleId = sale.getId();
 
-            // LƯU Ý: Nếu Webhook gửi đến trước Redirect, Order có thể chưa được Execute.
-            // Tuy nhiên, sự kiện PAYMENT.SALE.COMPLETED đảm bảo tiền đã về, nên ta có thể
-            // bỏ qua sự phụ thuộc vào trạng thái Execute trước đó và hoàn thành Order.
+                log.info("🔍 Looking for order with paymentReference: {}, saleId: {}", paymentId, saleId);
 
-            if (order.getStatus() != Order.OrderStatus.COMPLETED) {
+                try {
+                    // Lấy Order từ paymentReference
+                    Order order = orderService.getOrderByPaymentReference(paymentId);
+                    log.info("📦 Found order: {} with status: {}", order.getOrderId(), order.getStatus());
 
-                // Lấy thông tin giá trị
-                // LƯU Ý: amount này là giá trị tiền thật (USD)
-                BigDecimal amount = new BigDecimal(sale.getAmount().getTotal());
+                    if (order.getStatus() != Order.OrderStatus.COMPLETED) {
+                        // Lấy thông tin giá trị (USD from PayPal)
+                        BigDecimal amount = new BigDecimal(sale.getAmount().getTotal());
+                        log.info("💵 Processing payment amount: {} USD for order: {}", amount, order.getOrderId());
 
-                // 3. Thực hiện cộng Credit và ghi Transaction (Logic an toàn)
-                // sale.getId() là Sale ID (Mã giao dịch thực tế)
-                processSuccessfulOrder(order, amount, paymentId, sale.getId());
+                        // 3. Thực hiện cộng Credit và ghi Transaction
+                        processSuccessfulOrder(order, amount, paymentId, saleId);
 
-                log.info("✅ Successfully processed Webhook and completed Order {}.", order.getOrderId());
+                        log.info("✅ Successfully processed Webhook and completed Order {}.", order.getOrderId());
+                    } else {
+                        log.warn("⚠️ Webhook for PaymentID {} received, but Order {} is already COMPLETED. Ignoring.",
+                                paymentId, order.getOrderId());
+                    }
+                } catch (Exception orderException) {
+                    log.error("❌ Error processing order for paymentId {}: {}", paymentId, orderException.getMessage(), orderException);
+                    throw orderException;
+                }
             } else {
-                log.warn("Webhook for PaymentID {} received, but Order is already COMPLETED. Ignoring.", paymentId);
+                log.info("ℹ️ Ignoring webhook event type: {}", eventType);
             }
+        } catch (Exception e) {
+            log.error("❌ Critical error processing webhook: {}", e.getMessage(), e);
+            log.error("📄 Webhook payload that failed: {}", webhookEvent);
+            throw e;
         }
     }
 
@@ -277,6 +289,49 @@ public class PayPalService {
         log.info("Wallet updated for Order #{}. Added {} Credit.", order.getOrderId(), creditAmount);
     }
 
+
+    /**
+     * Fallback method to create transaction during success redirect if webhook hasn't been called.
+     * This ensures transactions are created even if webhooks fail or are delayed.
+     * @param paymentId PayPal payment ID
+     * @param payerId PayPal payer ID
+     * @return true if transaction was created, false if it already existed
+     */
+    @Transactional
+    public boolean createTransactionIfNotExists(String paymentId, String payerId) {
+        try {
+            log.info("🔍 Checking if transaction exists for paymentId: {}", paymentId);
+
+            // Get the order by payment reference
+            Order order = orderService.getOrderByPaymentReference(paymentId);
+
+            // Check if transaction already exists for this payment
+            if (walletService.transactionExistsForPayment(paymentId)) {
+                log.info("ℹ️ Transaction already exists for paymentId: {}", paymentId);
+                return false;
+            }
+
+            // Get payment details from PayPal to get the actual amount paid
+            Payment payment = Payment.get(apiContext, paymentId);
+
+            // Find the executed payment transaction
+            com.paypal.api.payments.Transaction paypalTransaction = payment.getTransactions().get(0);
+            BigDecimal amountPaid = new BigDecimal(paypalTransaction.getAmount().getTotal());
+
+            log.info("💰 Creating fallback transaction for order {} with amount {} USD",
+                    order.getOrderId(), amountPaid);
+
+            // Create the transaction using the same logic as webhook
+            processSuccessfulOrder(order, amountPaid, paymentId, paymentId + "_fallback");
+
+            return true;
+
+        } catch (Exception e) {
+            log.error("❌ Error creating fallback transaction for paymentId {}: {}", paymentId, e.getMessage(), e);
+            // Don't throw exception - this is a fallback, main payment already succeeded
+            return false;
+        }
+    }
 
     // --- Hàm Tiện ích ---
 

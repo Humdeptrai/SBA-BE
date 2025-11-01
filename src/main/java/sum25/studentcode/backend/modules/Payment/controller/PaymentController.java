@@ -31,7 +31,7 @@ public class PaymentController {
 
     /**
      * B2. Khi PayPal redirect về sau khi thanh toán thành công.
-     * Endpoint này CHỈ XÁC NHẬN giao dịch và chuyển hướng người dùng. KHÔNG CỘNG TIỀN.
+     * UPDATED: Now also creates transaction as fallback if webhook isn't called
      * @param paymentId ID thanh toán từ PayPal
      * @param PayerID ID người trả tiền từ PayPal
      */
@@ -40,26 +40,34 @@ public class PaymentController {
             @RequestParam String paymentId,
             @RequestParam String PayerID) {
 
-        log.info("Handling PayPal success redirect. PaymentID: {}, PayerID: {}", paymentId, PayerID);
+        log.info("🔄 Handling PayPal success redirect. PaymentID: {}, PayerID: {}", paymentId, PayerID);
 
         String redirectUrl;
 
         try {
-            // 1. GỌI SERVICE: Thực hiện payment (Execute) và trả về OrderId liên quan
+            // 1. Execute payment and get OrderId
             Long orderId = payPalService.executePaymentAndVerify(paymentId, PayerID);
+            log.info("✅ PayPal payment executed successfully. OrderID: {}", orderId);
 
-            // 2. Chuyển hướng người dùng về Frontend với trạng thái THÀNH CÔNG
-            // Việc cộng tiền đã được xử lý (hoặc sẽ được xử lý) bởi Webhook.
+            // 2. FALLBACK: Create transaction if webhook hasn't been called yet
+            // This ensures transaction is created even if webhook fails/delayed
+            boolean transactionCreated = payPalService.createTransactionIfNotExists(paymentId, PayerID);
+
+            if (transactionCreated) {
+                log.info("💰 Transaction created via success redirect fallback for order: {}", orderId);
+            } else {
+                log.info("ℹ️ Transaction already exists (likely created by webhook) for order: {}", orderId);
+            }
+
+            // 3. Redirect to frontend with success status
             redirectUrl = frontendBaseUrl + "/payment-status?status=success&orderId=" + orderId;
 
         } catch (PayPalRESTException e) {
-            log.error("PayPal execution failed for paymentId {}: {}", paymentId, e.getMessage());
-            // Lỗi xác nhận, chuyển hướng về thất bại
+            log.error("❌ PayPal execution failed for paymentId {}: {}", paymentId, e.getMessage());
             redirectUrl = frontendBaseUrl + "/payment-status?status=failed&message=execution_failed";
 
         } catch (Exception e) {
-            log.error("Internal error during success handling for paymentId {}: {}", paymentId, e.getMessage());
-            // Lỗi hệ thống, chuyển hướng về lỗi
+            log.error("❌ Internal error during success handling for paymentId {}: {}", paymentId, e.getMessage());
             redirectUrl = frontendBaseUrl + "/payment-status?status=error&message=internal_error";
         }
 

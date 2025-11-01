@@ -41,5 +41,11 @@ public interface WalletService {
      */
     Transaction depositCredit(User user, BigDecimal amount, Order order, String externalRefId);
 
+    /**
+     * Check if a transaction already exists for the given external payment ID.
+     * Used for idempotency checking.
+     */
+    boolean transactionExistsForPayment(String externalPaymentId);
+
     // Transaction withdrawCredit(User user, BigDecimal amount, Order order); // Tương lai: cho luồng sử dụng dịch vụ
 }

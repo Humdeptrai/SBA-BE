@@ -125,6 +125,20 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.save(txn);
     }
 
+    @Override
+    public List<TransactionResponse> getTransactionsByUserId(Long userId) {
+        // Verify user exists first
+        userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        // Get all transactions for the user
+        List<Transaction> transactions = transactionRepository.findByUser_UserId(userId);
+
+        return transactions.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
     private TransactionResponse convertToResponse(Transaction transaction) {
         return TransactionResponse.builder()
                 .transactionId(transaction.getTransactionId())

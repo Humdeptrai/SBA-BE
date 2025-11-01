@@ -30,6 +30,10 @@ public class TransactionController {
         return transactionService.getAllTransactions();
     }
 
+    @GetMapping("/user/{userId}")
+    public List<TransactionResponse> getTransactionsByUserId(@PathVariable Long userId) {
+        return transactionService.getTransactionsByUserId(userId);
+    }
 //    @PutMapping("/{id}")
 //    public TransactionResponse updateTransaction(@PathVariable Long id, @RequestBody TransactionRequest request) {
 //        return transactionService.updateTransaction(id, request);

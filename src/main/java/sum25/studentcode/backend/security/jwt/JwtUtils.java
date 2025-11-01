@@ -30,6 +30,7 @@ public class JwtUtils {
     public String generateToken(User userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", userDetails.getRole());
+        claims.put("userId", userDetails.getUserId()); // ✅ Thêm userId vào token
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -49,6 +50,41 @@ public class JwtUtils {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    /** ✅ Lấy userId từ token */
+    public Long extractUserId(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .setAllowedClockSkewSeconds(300) // ✅ cho phép lệch 5 phút
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        // Lấy userId từ claims và convert sang Long
+        Object userIdClaim = claims.get("userId");
+        if (userIdClaim != null) {
+            if (userIdClaim instanceof Integer) {
+                return ((Integer) userIdClaim).longValue();
+            } else if (userIdClaim instanceof Long) {
+                return (Long) userIdClaim;
+            } else if (userIdClaim instanceof String) {
+                return Long.valueOf((String) userIdClaim);
+            }
+        }
+        return null;
+    }
+
+    /** ✅ Lấy role từ token */
+    public String extractRole(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .setAllowedClockSkewSeconds(300)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return (String) claims.get("roles");
     }
 
     /** ✅ Kiểm tra token hợp lệ */

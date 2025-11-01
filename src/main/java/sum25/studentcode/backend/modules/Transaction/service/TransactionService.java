@@ -13,6 +13,7 @@ public interface TransactionService {
     TransactionResponse createTransaction(TransactionRequest request);
     TransactionResponse getTransactionById(Long id);
     List<TransactionResponse> getAllTransactions();
+    List<TransactionResponse> getTransactionsByUserId(Long userId);
     TransactionResponse updateTransaction(Long id, TransactionRequest request);
     void deleteTransaction(Long id);
     Transaction createDepositTransaction(Wallet wallet, User user, BigDecimal amount,

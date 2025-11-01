@@ -135,18 +135,36 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public Transaction depositCredit(User user, BigDecimal amount, Order order, String externalRefId) {
-        Wallet wallet = walletRepository.findByUser(user);
+        // 1. Idempotency check - skip if transaction already exists
+        if (externalRefId != null && transactionRepository.existsByExternalReferenceId(externalRefId)) {
+            log.warn("Transaction with externalRefId {} already exists. Skipping duplicate.", externalRefId);
+            return transactionRepository.findByExternalReferenceId(externalRefId).orElse(null);
+        }
 
-        BigDecimal balanceBefore = wallet.getBalance();
+        // 2. Find or create wallet for user
+        Wallet wallet = walletRepository.findByUser(user);
+        if (wallet == null) {
+            // Create new wallet if it doesn't exist
+            wallet = Wallet.builder()
+                    .user(user)
+                    .balance(BigDecimal.ZERO)
+                    .currency("VND")
+                    .isActive(true)
+                    .build();
+            wallet = walletRepository.save(wallet);
+            log.info("Created new wallet {} for user {}", wallet.getWalletId(), user.getUserId());
+        }
+
+        BigDecimal balanceBefore = wallet.getBalance() != null ? wallet.getBalance() : BigDecimal.ZERO;
         BigDecimal balanceAfter = balanceBefore.add(amount);
 
-        // 1. Cập nhật Wallet (luôn được bọc trong @Transactional)
+        // 3. Update Wallet (always wrapped in @Transactional)
         wallet.setBalance(balanceAfter);
         wallet.setUpdatedAt(LocalDateTime.now());
         walletRepository.save(wallet);
-        log.info(" Wallet {} updated: {} -> {}", wallet.getWalletId(), balanceBefore, balanceAfter);
+        log.info("Wallet {} updated: {} -> {}", wallet.getWalletId(), balanceBefore, balanceAfter);
 
-        // 2. Tạo Transaction (Bằng chứng kế toán)
+        // 4. Create Transaction (Accounting proof)
         Transaction transaction = Transaction.builder()
                 .wallet(wallet)
                 .user(user)
@@ -160,7 +178,11 @@ public class WalletServiceImpl implements WalletService {
                 .externalReferenceId(externalRefId)
                 .build();
 
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        log.info("Created transaction {} for deposit of {} credits to user {}",
+                savedTransaction.getTransactionId(), amount, user.getUserId());
+
+        return savedTransaction;
     }
 
 
@@ -174,6 +196,14 @@ public class WalletServiceImpl implements WalletService {
         Wallet wallet = walletRepository.findByUser_UserId(userId)
                 .orElseThrow(() -> new RuntimeException("Wallet not found for user ID: " + userId));
         return convertToResponse(wallet);
+    }
+
+    @Override
+    public boolean transactionExistsForPayment(String externalPaymentId) {
+        if (externalPaymentId == null) {
+            return false;
+        }
+        return transactionRepository.existsByExternalReferenceId(externalPaymentId);
     }
 
     // --- Các phương thức BỊ LOẠI BỎ vì rủi ro ---
@@ -208,3 +238,4 @@ public class WalletServiceImpl implements WalletService {
         return response;
     }
 }
+
