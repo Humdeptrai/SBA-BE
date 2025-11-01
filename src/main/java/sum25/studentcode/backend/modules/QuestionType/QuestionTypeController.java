@@ -1,6 +1,7 @@
 package sum25.studentcode.backend.modules.QuestionType;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sum25.studentcode.backend.modules.QuestionType.dto.request.QuestionTypeRequest;
 import sum25.studentcode.backend.modules.QuestionType.dto.response.QuestionTypeResponse;
@@ -16,26 +17,31 @@ public class QuestionTypeController {
     private final QuestionTypeService questionTypeService;
 
     @PostMapping
+    @PreAuthorize("hasRole('TEACHER')")
     public QuestionTypeResponse createQuestionType(@RequestBody QuestionTypeRequest request) {
         return questionTypeService.createQuestionType(request);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('TEACHER')")
     public QuestionTypeResponse getQuestionTypeById(@PathVariable Long id) {
         return questionTypeService.getQuestionTypeById(id);
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('TEACHER')")
     public List<QuestionTypeResponse> getAllQuestionTypes() {
         return questionTypeService.getAllQuestionTypes();
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('TEACHER')")
     public QuestionTypeResponse updateQuestionType(@PathVariable Long id, @RequestBody QuestionTypeRequest request) {
         return questionTypeService.updateQuestionType(id, request);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('TEACHER')")
     public void deleteQuestionType(@PathVariable Long id) {
         questionTypeService.deleteQuestionType(id);
     }

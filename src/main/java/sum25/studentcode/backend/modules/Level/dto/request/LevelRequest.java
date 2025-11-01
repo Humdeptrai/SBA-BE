@@ -15,7 +15,7 @@ public class LevelRequest {
     private String levelName;
 
     @NotNull(message = "Difficulty score is required")
-    private Integer difficultyScore;
+    private Double difficultyScore;
 
     private String description;
 }

@@ -118,6 +118,15 @@ public class QuestionsServiceImpl implements QuestionsService {
                 }).collect(Collectors.toList());
     }
 
+    @Override
+    public List<QuestionsResponse> getQuestionsByLessonId(Long lessonId) {
+        List<Questions> questions = questionsRepository.findByLesson_LessonId(lessonId);
+        return questions.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+
     private QuestionsResponse convertToResponse(Questions question) {
         QuestionsResponse response = new QuestionsResponse();
         response.setQuestionId(question.getQuestionId());

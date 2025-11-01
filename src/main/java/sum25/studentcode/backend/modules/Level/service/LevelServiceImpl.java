@@ -97,11 +97,11 @@ public class LevelServiceImpl implements LevelService {
         return levels.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-    private void validateDifficultyScore(Integer score) {
-        if (score == null || score <= 0 || score > 100) {
+    private void validateDifficultyScore(Double score) {
+        if (score == null || score < 0.01 || score > 100.0) {
             throw new ApiException(
                     "INVALID_DIFFICULTY_SCORE",
-                    "Điểm độ khó phải nằm trong khoảng 1–100.",
+                    "Điểm độ khó phải nằm trong khoảng 0.01 – 100.0.",
                     400
             );
         }

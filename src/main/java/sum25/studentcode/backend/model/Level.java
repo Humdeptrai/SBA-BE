@@ -28,7 +28,7 @@ public class Level {
     private String levelName;
     
     @Column(name = "difficulty_score")
-    private Integer difficultyScore;
+    private Double difficultyScore;
     
     @Lob
     private String description;

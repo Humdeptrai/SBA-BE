@@ -13,4 +13,6 @@
         QuestionsResponse updateQuestion(Long id, QuestionsRequest request);
         void deleteQuestion(Long id);
         List<OptionsResponse> getOptionsByQuestionId(Long questionId);
+        List<QuestionsResponse> getQuestionsByLessonId(Long lessonId);
+
     }

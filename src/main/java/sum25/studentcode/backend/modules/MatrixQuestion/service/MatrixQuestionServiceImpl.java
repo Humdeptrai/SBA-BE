@@ -228,42 +228,72 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
         MatrixQuestion matrixQuestion = matrixQuestionRepository.findById(id)
                 .orElseThrow(() -> new ApiException("MATRIX_QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi trong ma trận.", 404));
 
+        Matrix targetMatrix = matrixQuestion.getMatrix(); // mặc định giữ nguyên matrix hiện tại
+        Questions targetQuestion = matrixQuestion.getQuestion(); // mặc định giữ nguyên question hiện tại
+
+        // ✅ Nếu có truyền matrixId mới → cập nhật matrix
         if (request.getMatrixId() != null) {
-            Matrix matrix = matrixRepository.findById(request.getMatrixId())
+            targetMatrix = matrixRepository.findById(request.getMatrixId())
                     .orElseThrow(() -> new ApiException("MATRIX_NOT_FOUND", "Không tìm thấy ma trận đề thi.", 404));
-            matrixQuestion.setMatrix(matrix);
         }
 
+        // ✅ Nếu có truyền questionIds mới → cập nhật question
         if (request.getQuestionIds() != null && !request.getQuestionIds().isEmpty()) {
             Long qId = request.getQuestionIds().get(0);
-            Questions question = questionsRepository.findById(qId)
+            targetQuestion = questionsRepository.findById(qId)
                     .orElseThrow(() -> new ApiException("QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi ID=" + qId, 404));
-            matrixQuestion.setQuestion(question);
         }
 
+        // ✅ Kiểm tra lesson consistency giữa Matrix và Question
+        if (targetMatrix.getLesson() == null || targetQuestion.getLesson() == null) {
+            throw new ApiException("LESSON_NULL", "Câu hỏi hoặc ma trận chưa được gắn với bài học hợp lệ.", 400);
+        }
+
+        Long matrixLessonId = targetMatrix.getLesson().getLessonId();
+        Long questionLessonId = targetQuestion.getLesson().getLessonId();
+
+        if (!matrixLessonId.equals(questionLessonId)) {
+            throw new ApiException("LESSON_MISMATCH",
+                    String.format("Câu hỏi (Lesson %d) không thuộc cùng bài học với ma trận (Lesson %d).",
+                            questionLessonId, matrixLessonId), 400);
+        }
+
+        // ✅ Kiểm tra trùng lặp: question đó đã tồn tại trong matrix khác chưa
+        if (matrixQuestionRepository.existsByMatrixAndQuestion(targetMatrix, targetQuestion)
+                && !matrixQuestion.getQuestion().getQuestionId().equals(targetQuestion.getQuestionId())) {
+            throw new ApiException("DUPLICATE_QUESTION",
+                    "Câu hỏi này đã tồn tại trong ma trận được chọn.", 400);
+        }
+
+        // ✅ Xử lý điểm
         BigDecimal marks = request.getMarksAllocated();
         if (marks == null || marks.compareTo(BigDecimal.ZERO) <= 0) {
-            Questions question = matrixQuestion.getQuestion();
-            if (question.getLevel() == null) {
+            Level level = targetQuestion.getLevel();
+            if (level == null) {
                 throw new ApiException("LEVEL_NOT_FOUND",
-                        "Câu hỏi ID=" + question.getQuestionId() + " chưa được gán cấp độ, không thể xác định điểm.", 400);
+                        "Câu hỏi ID=" + targetQuestion.getQuestionId() + " chưa được gán cấp độ.", 400);
             }
-            marks = BigDecimal.valueOf(question.getLevel().getDifficultyScore());
+            marks = BigDecimal.valueOf(level.getDifficultyScore());
         }
 
+        // ✅ Cập nhật entity
+        matrixQuestion.setMatrix(targetMatrix);
+        matrixQuestion.setQuestion(targetQuestion);
         matrixQuestion.setMarksAllocated(marks);
+
         matrixQuestionRepository.save(matrixQuestion);
 
+        // ✅ Build response
         MatrixQuestionWithOptionsResponse res = new MatrixQuestionWithOptionsResponse();
         res.setMatrixQuestionId(matrixQuestion.getMatrixQuestionId());
-        res.setMatrixId(matrixQuestion.getMatrix().getMatrixId());
-        res.setMatrixName(matrixQuestion.getMatrix().getMatrixName());
-        res.setQuestionId(matrixQuestion.getQuestion().getQuestionId());
-        res.setQuestionText(matrixQuestion.getQuestion().getQuestionText());
-        res.setMarksAllocated(matrixQuestion.getMarksAllocated());
+        res.setMatrixId(targetMatrix.getMatrixId());
+        res.setMatrixName(targetMatrix.getMatrixName());
+        res.setQuestionId(targetQuestion.getQuestionId());
+        res.setQuestionText(targetQuestion.getQuestionText());
+        res.setMarksAllocated(marks);
 
         List<OptionsResponse> options = optionsRepository
-                .findByQuestion_QuestionId(matrixQuestion.getQuestion().getQuestionId())
+                .findByQuestion_QuestionId(targetQuestion.getQuestionId())
                 .stream()
                 .map(o -> {
                     OptionsResponse opt = new OptionsResponse();
@@ -280,4 +310,5 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
         res.setOptions(options);
         return res;
     }
+
 }

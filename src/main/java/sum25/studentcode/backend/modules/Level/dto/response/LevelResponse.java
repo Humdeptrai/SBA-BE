@@ -12,7 +12,7 @@ public class LevelResponse {
 
     private Long levelId;
     private String levelName;
-    private Integer difficultyScore;
+    private Double difficultyScore;
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

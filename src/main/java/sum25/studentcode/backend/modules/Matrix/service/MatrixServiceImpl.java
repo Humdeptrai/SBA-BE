@@ -21,11 +21,17 @@ public class MatrixServiceImpl implements MatrixService {
     private final MatrixRepository matrixRepository;
     private final LessonRepository lessonRepository;
 
-    /** ✅ Tạo ma trận câu hỏi mới */
     @Override
     public MatrixResponse createMatrix(MatrixRequest request) {
         var lesson = lessonRepository.findById(request.getLessonId())
                 .orElseThrow(() -> new ApiException("LESSON_NOT_FOUND", "Không tìm thấy bài học.", 404));
+
+        // 🔍 Kiểm tra trùng tên trong cùng bài học
+        if (matrixRepository.existsByMatrixNameAndLesson_LessonId(request.getMatrixName(), request.getLessonId())) {
+            throw new ApiException("DUPLICATE_MATRIX_NAME",
+                    String.format("Ma trận với tên '%s' đã tồn tại trong bài học này.", request.getMatrixName()), 400);
+        }
+
         Matrix matrix = Matrix.builder()
                 .matrixName(request.getMatrixName())
                 .description(request.getDescription())
@@ -36,6 +42,7 @@ public class MatrixServiceImpl implements MatrixService {
         matrix = matrixRepository.save(matrix);
         return convertToResponse(matrix);
     }
+
 
     /** ✅ Lấy chi tiết ma trận */
     @Override
@@ -61,6 +68,21 @@ public class MatrixServiceImpl implements MatrixService {
         Matrix matrix = matrixRepository.findById(id)
                 .orElseThrow(() -> new ApiException("MATRIX_NOT_FOUND", "Không tìm thấy ma trận đề thi.", 404));
 
+        Long targetLessonId = request.getLessonId() != null
+                ? request.getLessonId()
+                : (matrix.getLesson() != null ? matrix.getLesson().getLessonId() : null);
+
+        if (targetLessonId == null) {
+            throw new ApiException("LESSON_ID_REQUIRED", "Ma trận phải thuộc về một bài học.", 400);
+        }
+
+        // 🔍 Kiểm tra trùng tên (trừ chính nó)
+        if (matrixRepository.existsByMatrixNameAndLesson_LessonIdAndMatrixIdNot(
+                request.getMatrixName(), targetLessonId, id)) {
+            throw new ApiException("DUPLICATE_MATRIX_NAME",
+                    String.format("Đã tồn tại ma trận với tên '%s' trong bài học này.", request.getMatrixName()), 400);
+        }
+
         matrix.setMatrixName(request.getMatrixName());
         matrix.setDescription(request.getDescription());
         matrix.setTotalQuestions(request.getTotalQuestions());
@@ -68,12 +90,13 @@ public class MatrixServiceImpl implements MatrixService {
         if (request.getLessonId() != null) {
             var lesson = lessonRepository.findById(request.getLessonId())
                     .orElseThrow(() -> new ApiException("LESSON_NOT_FOUND", "Không tìm thấy bài học.", 404));
-            matrix.setLesson(lesson); // ✅ cập nhật lesson nếu có
+            matrix.setLesson(lesson);
         }
 
         matrix = matrixRepository.save(matrix);
         return convertToResponse(matrix);
     }
+
 
     /** ✅ Xoá ma trận */
     @Override

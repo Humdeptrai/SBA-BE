@@ -83,12 +83,12 @@ public class DataSeeder implements CommandLineRunner {
         if (levelRepository.count() == 0) {
             levelRepository.save(Level.builder()
                     .levelName("Easy")
-                    .difficultyScore(1)
+                    .difficultyScore(1.0)
                     .description("Easy level")
                     .build());
             levelRepository.save(Level.builder()
                     .levelName("Medium")
-                    .difficultyScore(2)
+                    .difficultyScore(2.0)
                     .description("Medium level")
                     .build());
         }
