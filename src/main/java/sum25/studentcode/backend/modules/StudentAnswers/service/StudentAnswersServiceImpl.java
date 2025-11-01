@@ -2,6 +2,7 @@ package sum25.studentcode.backend.modules.StudentAnswers.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import sum25.studentcode.backend.core.exception.ApiException;
 import sum25.studentcode.backend.model.Questions;
 import sum25.studentcode.backend.model.StudentAnswers;
 import sum25.studentcode.backend.model.StudentPractice;
@@ -14,6 +15,7 @@ import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPract
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -70,7 +72,6 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
         return convertToResponse(studentAnswer);
     }
 
-
     @Override
     public StudentAnswersResponse getStudentAnswerById(Long id) {
         StudentAnswers studentAnswer = studentAnswersRepository.findById(id)
@@ -105,7 +106,6 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
             isCorrect = correctOptionId != null && correctOptionId.equals(request.getSelectedOptionId());
         }
 
-        // ❌ Không tính điểm ở đây nữa
         existing.setQuestion(question);
         existing.setSelectedOptionId(request.getSelectedOptionId());
         existing.setIsCorrect(isCorrect);
@@ -122,6 +122,57 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
             throw new RuntimeException("StudentAnswer not found");
         }
         studentAnswersRepository.deleteById(id);
+    }
+
+    // ✅ LƯU ĐÁP ÁN TẠM (DRAFT) - Không chấm điểm
+    @Override
+    public void saveDraftAnswer(StudentAnswersRequest request) {
+        StudentPractice studentPractice = studentPracticeRepository.findById(request.getPracticeId())
+                .orElseThrow(() -> new ApiException("PRACTICE_NOT_FOUND", "Không tìm thấy bài làm", 404));
+
+        Questions question = questionsRepository.findById(request.getQuestionId())
+                .orElseThrow(() -> new ApiException("QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi", 404));
+
+        // ✅ Kiểm tra đã có đáp án chưa
+        Optional<StudentAnswers> existing = studentAnswersRepository
+                .findByStudentPracticeAndQuestion(studentPractice, question);
+
+        if (existing.isPresent()) {
+            // ✅ Đã có → Cập nhật
+            StudentAnswers answer = existing.get();
+            answer.setSelectedOptionId(request.getSelectedOptionId());
+            answer.setAnsweredAt(LocalDateTime.now());
+            studentAnswersRepository.save(answer);
+
+            System.out.println("✅ [DRAFT] Updated answer for Q" + question.getQuestionId());
+        } else {
+            // ✅ Chưa có → Tạo mới (chưa chấm điểm)
+            StudentAnswers newAnswer = StudentAnswers.builder()
+                    .studentPractice(studentPractice)
+                    .question(question)
+                    .selectedOptionId(request.getSelectedOptionId())
+                    .isCorrect(false) // Chưa chấm
+                    .marksEarned(BigDecimal.ZERO)
+                    .answeredAt(LocalDateTime.now())
+                    .build();
+            studentAnswersRepository.save(newAnswer);
+
+            System.out.println("✅ [DRAFT] Saved new answer for Q" + question.getQuestionId());
+        }
+    }
+
+    // ✅ LẤY TẤT CẢ ĐÁP ÁN ĐÃ LƯU CỦA 1 PRACTICE
+    @Override
+    public List<StudentAnswersResponse> getAnswersByPracticeId(Long practiceId) {
+        StudentPractice studentPractice = studentPracticeRepository.findById(practiceId)
+                .orElseThrow(() -> new ApiException("PRACTICE_NOT_FOUND", "Không tìm thấy bài làm", 404));
+
+        List<StudentAnswers> answers = studentAnswersRepository
+                .findByStudentPractice(studentPractice);
+
+        return answers.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
     }
 
     private StudentAnswersResponse convertToResponse(StudentAnswers entity) {

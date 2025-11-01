@@ -1,5 +1,6 @@
 package sum25.studentcode.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,11 +25,10 @@ public class PracticeSession {
     @Column(name = "session_id")
     private Long sessionId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "exam_id", referencedColumnName = "exam_id")
-    private Exam exam;
+    @Column(name = "description")
+    private String description;
 
-    @Column(name = "session_code", unique = true)
+    @Column(name = "session_code")
     private String sessionCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,17 +38,19 @@ public class PracticeSession {
     @Column(name = "session_name")
     private String sessionName;
 
-    @Column(name = "start_time")
-    private LocalDateTime startTime;
-
-    @Column(name = "end_time")
-    private LocalDateTime endTime;
-
     @Column(name = "is_active")
-    private Boolean isActive;
+    private Boolean isActive=true;
 
     @Column(name = "max_participants")
     private Integer maxParticipants;
+
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    // ✅ Thêm JsonFormat cho examDate
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
+    @Column(name = "exam_date")
+    private LocalDateTime examDate;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -66,4 +68,13 @@ public class PracticeSession {
     @JoinColumn(name = "matrix_id", nullable = false)
     private Matrix matrix;
 
+    @Column(name = "current_participants")
+    private Integer currentParticipants = 0; // đếm người đã tham gia
+
+    @Column(name = "auto_close")
+    private Boolean autoClose = true; // cho phép tự động đóng khi hết giờ
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lesson_id")
+    private Lesson lesson;
 }

@@ -11,4 +11,6 @@ public interface StudentAnswersService {
     List<StudentAnswersResponse> getAllStudentAnswers();
     StudentAnswersResponse updateStudentAnswer(Long id, StudentAnswersRequest request);
     void deleteStudentAnswer(Long id);
+    void saveDraftAnswer(StudentAnswersRequest request);
+    List<StudentAnswersResponse> getAnswersByPracticeId(Long practiceId);
 }

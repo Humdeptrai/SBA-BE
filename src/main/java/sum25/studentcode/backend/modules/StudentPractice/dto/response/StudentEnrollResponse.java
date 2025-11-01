@@ -1,9 +1,11 @@
 package sum25.studentcode.backend.modules.StudentPractice.dto.response;
 
+import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 public class StudentEnrollResponse {
     private Long practiceId;
     private Long sessionId;

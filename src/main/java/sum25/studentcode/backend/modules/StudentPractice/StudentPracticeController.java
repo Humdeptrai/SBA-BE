@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.StudentEnrollRequest;
-import sum25.studentcode.backend.modules.StudentPractice.dto.request.StudentPracticeRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.TeacherGradeRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.PracticeQuestionResponse;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentEnrollResponse;
@@ -30,19 +29,19 @@ public class StudentPracticeController {
         return studentPracticeService.getAllStudentPractices();
     }
 
-    /** 🧠 Học sinh nộp bài */
+    /** 🧠 Học sinh nộp bài (tự động chấm điểm) */
     @PutMapping("/{practiceId}/submit")
-    public ResponseEntity<StudentPracticeResponse> submitPractice(@PathVariable Long practiceId) {
-        return ResponseEntity.ok(studentPracticeService.submitPractice(practiceId));
+    public StudentPracticeResponse submitPractice(@PathVariable Long practiceId) {
+        return studentPracticeService.submitPractice(practiceId);
     }
 
     /** 👩‍🏫 Giáo viên chấm điểm */
     @PutMapping("/{practiceId}/grade")
-    public ResponseEntity<StudentPracticeResponse> gradePractice(
+    public StudentPracticeResponse gradePractice(
             @PathVariable Long practiceId,
             @RequestBody TeacherGradeRequest request
     ) {
-        return ResponseEntity.ok(studentPracticeService.gradePractice(practiceId, request));
+        return studentPracticeService.gradePractice(practiceId, request);
     }
 
     @DeleteMapping("/{id}")

@@ -41,4 +41,6 @@ public class MatrixQuestion {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
 }

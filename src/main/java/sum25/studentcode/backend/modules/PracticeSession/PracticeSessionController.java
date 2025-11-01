@@ -39,4 +39,10 @@ public class PracticeSessionController {
     public void deletePracticeSession(@PathVariable Long id) {
         practiceSessionService.deletePracticeSession(id);
     }
+
+    @GetMapping("/lesson/{lessonId}")
+    public List<PracticeSessionResponse> getPracticeSessionsByLessonId(@PathVariable Long lessonId) {
+        return practiceSessionService.getPracticeSessionsByLessonId(lessonId);
+    }
+
 }

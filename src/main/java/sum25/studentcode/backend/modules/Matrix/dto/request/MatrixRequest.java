@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class MatrixRequest {
-    private Long examId;
     private String matrixName;
     private String description;
     private Integer totalQuestions;
+    private Long lessonId;
 }

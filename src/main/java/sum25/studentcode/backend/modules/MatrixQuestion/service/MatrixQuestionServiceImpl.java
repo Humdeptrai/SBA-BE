@@ -52,19 +52,26 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
                             currentCount, request.getQuestionIds().size(), total), 400);
         }
 
-        // ⚠️ Thông báo nếu chưa đủ câu hỏi
-        if (total > 0 && currentCount + request.getQuestionIds().size() < total) {
-            throw new ApiException("MATRIX_INCOMPLETE",
-                    String.format("Ma trận hiện mới có %d/%d câu hỏi. Vui lòng bổ sung thêm.",
-                            currentCount + request.getQuestionIds().size(), total), 206);
-        }
-
-        // ✅ Thêm câu hỏi và build response có options
         return request.getQuestionIds().stream()
                 .map(qId -> {
                     Questions question = questionsRepository.findById(qId)
                             .orElseThrow(() -> new ApiException("QUESTION_NOT_FOUND",
                                     "Không tìm thấy câu hỏi ID=" + qId, 404));
+
+                    // ✅ Kiểm tra Lesson của Question và Matrix phải trùng nhau
+                    if (question.getLesson() != null && matrix.getLesson() != null) {
+                        Long questionLessonId = question.getLesson().getLessonId();
+                        Long matrixLessonId = matrix.getLesson().getLessonId();
+                        if (!questionLessonId.equals(matrixLessonId)) {
+                            throw new ApiException("LESSON_MISMATCH",
+                                    String.format("Câu hỏi ID=%d thuộc bài học %d không thể thêm vào ma trận của bài học %d.",
+                                            qId, questionLessonId, matrixLessonId),
+                                    400);
+                        }
+                    } else {
+                        throw new ApiException("LESSON_NULL",
+                                "Câu hỏi hoặc ma trận chưa được gắn với bài học hợp lệ.", 400);
+                    }
 
                     if (matrixQuestionRepository.existsByMatrixAndQuestion(matrix, question)) {
                         throw new ApiException("DUPLICATE_QUESTION",
@@ -89,7 +96,7 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
                                     .build()
                     );
 
-                    // ✅ Build response có options
+                    // build response như cũ...
                     MatrixQuestionWithOptionsResponse res = new MatrixQuestionWithOptionsResponse();
                     res.setMatrixQuestionId(mq.getMatrixQuestionId());
                     res.setMatrixId(matrix.getMatrixId());
@@ -98,7 +105,6 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
                     res.setQuestionText(question.getQuestionText());
                     res.setMarksAllocated(marks);
 
-                    // ✅ Danh sách options đầy đủ
                     List<OptionsResponse> options = optionsRepository
                             .findByQuestion_QuestionId(question.getQuestionId())
                             .stream()
@@ -119,6 +125,7 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
                 })
                 .collect(Collectors.toList());
     }
+
 
     /** ✅ Lấy danh sách câu hỏi + options trong 1 matrix */
     @Override

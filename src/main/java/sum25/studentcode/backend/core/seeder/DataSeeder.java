@@ -13,7 +13,6 @@ import sum25.studentcode.backend.modules.Level.repository.LevelRepository;
 import sum25.studentcode.backend.modules.QuestionType.repository.QuestionTypeRepository;
 import sum25.studentcode.backend.modules.Questions.repository.QuestionsRepository;
 import sum25.studentcode.backend.modules.Options.repository.OptionsRepository;
-import sum25.studentcode.backend.modules.Exam.repository.ExamRepository;
 import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
 import sum25.studentcode.backend.modules.PracticeSession.repository.PracticeSessionRepository;
 import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
@@ -33,7 +32,6 @@ public class DataSeeder implements CommandLineRunner {
     private final QuestionTypeRepository questionTypeRepository;
     private final QuestionsRepository questionsRepository;
     private final OptionsRepository optionsRepository;
-    private final ExamRepository examRepository;
     private final MatrixRepository matrixRepository;
     private final PracticeSessionRepository practiceSessionRepository;
     private final StudentPracticeRepository studentPracticeRepository;
@@ -83,8 +81,16 @@ public class DataSeeder implements CommandLineRunner {
 
         // 4️⃣ LEVEL
         if (levelRepository.count() == 0) {
-            levelRepository.save(Level.builder().levelName("Easy").difficultyScore(1).description("Easy level").build());
-            levelRepository.save(Level.builder().levelName("Medium").difficultyScore(2).description("Medium level").build());
+            levelRepository.save(Level.builder()
+                    .levelName("Easy")
+                    .difficultyScore(1)
+                    .description("Easy level")
+                    .build());
+            levelRepository.save(Level.builder()
+                    .levelName("Medium")
+                    .difficultyScore(2)
+                    .description("Medium level")
+                    .build());
         }
 
         // 5️⃣ QUESTION TYPE
@@ -96,32 +102,19 @@ public class DataSeeder implements CommandLineRunner {
                     .build());
         }
 
-        // 6️⃣ EXAM
-        if (examRepository.count() == 0) {
-            examRepository.save(
-                    Exam.builder()
-                            .examName("Math Entrance Test")
-                            .examCode("MATH001")
-                            .description("Initial placement test for students")
-                            .durationMinutes(30)
-                            .examDate(LocalDateTime.now().plusDays(3))
-                            .isActive(true)
-                            .build()
-            );
-        }
-
-        // 7️⃣ MATRIX
+        // 6️⃣ MATRIX (Exam đã bị xóa, Matrix độc lập)
         if (matrixRepository.count() == 0) {
+            Lesson lesson = lessonRepository.findAll().get(0);
             Matrix matrix = Matrix.builder()
-                    .exam(examRepository.findAll().get(0))
-                    .matrixName("Math Matrix 1")
-                    .description("Basic matrix structure for exam")
-                    .totalQuestions(3)
+                    .lesson(lesson)
+                    .matrixName("Matrix Algebra 1")
+                    .description("Cấu trúc đề toán đại số cơ bản")
+                    .totalQuestions(2)
                     .build();
             matrixRepository.save(matrix);
         }
 
-        // 8️⃣ QUESTIONS
+        // 7️⃣ QUESTIONS
         if (questionsRepository.count() == 0) {
             Lesson lesson = lessonRepository.findAll().get(0);
             Level easy = levelRepository.findAll().get(0);
@@ -148,18 +141,22 @@ public class DataSeeder implements CommandLineRunner {
             questionsRepository.save(q2);
         }
 
-        // 9️⃣ OPTIONS
+        // 8️⃣ OPTIONS
         if (optionsRepository.count() == 0) {
             Questions q1 = questionsRepository.findAll().get(0);
-            optionsRepository.save(Options.builder().question(q1).optionText("3").isCorrect(false).optionOrder(1).build());
-            optionsRepository.save(Options.builder().question(q1).optionText("4").isCorrect(true).optionOrder(2).build());
+            optionsRepository.save(Options.builder()
+                    .question(q1).optionText("3").isCorrect(false).optionOrder(1).build());
+            optionsRepository.save(Options.builder()
+                    .question(q1).optionText("4").isCorrect(true).optionOrder(2).build());
 
             Questions q2 = questionsRepository.findAll().get(1);
-            optionsRepository.save(Options.builder().question(q2).optionText("1").isCorrect(false).optionOrder(1).build());
-            optionsRepository.save(Options.builder().question(q2).optionText("2").isCorrect(true).optionOrder(2).build());
+            optionsRepository.save(Options.builder()
+                    .question(q2).optionText("1").isCorrect(false).optionOrder(1).build());
+            optionsRepository.save(Options.builder()
+                    .question(q2).optionText("2").isCorrect(true).optionOrder(2).build());
         }
 
-        // 🔟 PRACTICE SESSION
+        // 9️⃣ PRACTICE SESSION (Exam bị xóa, giờ gắn trực tiếp với Matrix)
         if (practiceSessionRepository.count() == 0) {
             User teacher = userRepository.findByUsername("admin")
                     .orElseThrow(() -> new RuntimeException("Admin user not found"));
@@ -167,19 +164,22 @@ public class DataSeeder implements CommandLineRunner {
 
             PracticeSession session = PracticeSession.builder()
                     .matrix(matrix)
+                    .lesson(matrix.getLesson())
                     .sessionName("Math Practice Session 1")
-                    .sessionCode("MATH001")
+                    .sessionCode("ALGEBRA001")
                     .teacher(teacher)
-                    .startTime(LocalDateTime.now())
-                    .endTime(LocalDateTime.now().plusHours(1))
                     .isActive(true)
                     .maxParticipants(30)
+                    .currentParticipants(0)
+                    .autoClose(true)
+                    .examDate(LocalDateTime.now().plusMinutes(1)) // bắt đầu sau 1 phút
+                    .durationMinutes(30)
                     .build();
 
             practiceSessionRepository.save(session);
         }
 
-        // 1️⃣1️⃣ STUDENT PRACTICE
+        // 🔟 STUDENT PRACTICE
         if (studentPracticeRepository.count() == 0) {
             User student = userRepository.findByUsername("student").orElseThrow();
             PracticeSession session = practiceSessionRepository.findAll().get(0);
@@ -194,7 +194,7 @@ public class DataSeeder implements CommandLineRunner {
             studentPracticeRepository.save(practice);
         }
 
-        // 1️⃣2️⃣ STUDENT ANSWER
+        // 1️⃣1️⃣ STUDENT ANSWER
         if (studentAnswersRepository.count() == 0) {
             StudentPractice practice = studentPracticeRepository.findAll().get(0);
             Questions q1 = questionsRepository.findAll().get(0);

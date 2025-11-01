@@ -39,4 +39,17 @@ public class StudentAnswersController {
     public void deleteStudentAnswer(@PathVariable Long id) {
         studentAnswersService.deleteStudentAnswer(id);
     }
+
+    // ✅ LƯU ĐÁP ÁN TẠM (DRAFT)
+    @PostMapping("/save-draft")
+    public String saveDraftAnswer(@RequestBody StudentAnswersRequest request) {
+        studentAnswersService.saveDraftAnswer(request);
+        return "Đã lưu đáp án tạm";
+    }
+
+    // ✅ LẤY TẤT CẢ ĐÁP ÁN ĐÃ LƯU
+    @GetMapping("/practice/{practiceId}")
+    public List<StudentAnswersResponse> getAnswersByPracticeId(@PathVariable Long practiceId) {
+        return studentAnswersService.getAnswersByPracticeId(practiceId);
+    }
 }
