@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.core.exception.ApiException;
 import sum25.studentcode.backend.model.Matrix;
+import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
 import sum25.studentcode.backend.modules.Matrix.dto.request.MatrixRequest;
 import sum25.studentcode.backend.modules.Matrix.dto.response.MatrixResponse;
 import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
@@ -18,14 +19,18 @@ import java.util.stream.Collectors;
 public class MatrixServiceImpl implements MatrixService {
 
     private final MatrixRepository matrixRepository;
+    private final LessonRepository lessonRepository;
 
     /** ✅ Tạo ma trận câu hỏi mới */
     @Override
     public MatrixResponse createMatrix(MatrixRequest request) {
+        var lesson = lessonRepository.findById(request.getLessonId())
+                .orElseThrow(() -> new ApiException("LESSON_NOT_FOUND", "Không tìm thấy bài học.", 404));
         Matrix matrix = Matrix.builder()
                 .matrixName(request.getMatrixName())
                 .description(request.getDescription())
                 .totalQuestions(request.getTotalQuestions())
+                .lesson(lesson)
                 .build();
 
         matrix = matrixRepository.save(matrix);
@@ -60,6 +65,12 @@ public class MatrixServiceImpl implements MatrixService {
         matrix.setDescription(request.getDescription());
         matrix.setTotalQuestions(request.getTotalQuestions());
 
+        if (request.getLessonId() != null) {
+            var lesson = lessonRepository.findById(request.getLessonId())
+                    .orElseThrow(() -> new ApiException("LESSON_NOT_FOUND", "Không tìm thấy bài học.", 404));
+            matrix.setLesson(lesson); // ✅ cập nhật lesson nếu có
+        }
+
         matrix = matrixRepository.save(matrix);
         return convertToResponse(matrix);
     }
@@ -82,6 +93,8 @@ public class MatrixServiceImpl implements MatrixService {
         response.setTotalQuestions(matrix.getTotalQuestions());
         response.setCreatedAt(matrix.getCreatedAt());
         response.setUpdatedAt(matrix.getUpdatedAt());
+        response.setLessonId(matrix.getLesson() != null ? matrix.getLesson().getLessonId() : null);
+
         return response;
     }
 }

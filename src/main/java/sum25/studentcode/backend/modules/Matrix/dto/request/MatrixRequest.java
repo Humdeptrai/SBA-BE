@@ -7,4 +7,5 @@ public class MatrixRequest {
     private String matrixName;
     private String description;
     private Integer totalQuestions;
+    private Long lessonId;
 }
