@@ -17,6 +17,7 @@ import sum25.studentcode.backend.modules.Options.repository.OptionsRepository;
 import sum25.studentcode.backend.modules.Questions.repository.QuestionsRepository;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -132,7 +133,8 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
     public List<MatrixQuestionWithOptionsResponse> getQuestionsWithOptionsByMatrixId(Long matrixId) {
         List<MatrixQuestion> list = matrixQuestionRepository.findByMatrix_MatrixId(matrixId);
         if (list.isEmpty()) {
-            throw new ApiException("EMPTY_MATRIX", "Ma trận này chưa có câu hỏi.", 404);
+            // Trả danh sách rỗng kèm message
+            return Collections.emptyList();
         }
 
         return list.stream().map(mq -> {
