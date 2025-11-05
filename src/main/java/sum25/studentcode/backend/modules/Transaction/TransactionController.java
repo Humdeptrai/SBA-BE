@@ -15,10 +15,6 @@ public class TransactionController {
 
     private final TransactionService transactionService;
 
-//    @PostMapping
-//    public TransactionResponse createTransaction(@RequestBody TransactionRequest request) {
-//        return transactionService.createTransaction(request);
-//    }
 
     @GetMapping("/{id}")
     public TransactionResponse getTransactionById(@PathVariable Long id) {
@@ -34,13 +30,5 @@ public class TransactionController {
     public List<TransactionResponse> getTransactionsByUserId(@PathVariable Long userId) {
         return transactionService.getTransactionsByUserId(userId);
     }
-//    @PutMapping("/{id}")
-//    public TransactionResponse updateTransaction(@PathVariable Long id, @RequestBody TransactionRequest request) {
-//        return transactionService.updateTransaction(id, request);
-//    }
-//
-//    @DeleteMapping("/{id}")
-//    public void deleteTransaction(@PathVariable Long id) {
-//        transactionService.deleteTransaction(id);
-//    }
+
 }

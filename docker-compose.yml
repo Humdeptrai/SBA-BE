@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: sba_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sba
+      POSTGRES_USER: labapi_user
+      POSTGRES_PASSWORD: labapi_password
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labapi_user -d sba"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sba-network
+
+  # Uncomment this if you want to run your Spring Boot app in Docker too
+  # backend:
+  #   build: .
+  #   container_name: sba_backend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sba
+  #     - SPRING_DATASOURCE_USERNAME=labapi_user
+  #     - SPRING_DATASOURCE_PASSWORD=labapi_password
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - sba-network
+
+volumes:
+  postgres_data:
+
+networks:
+  sba-network:
+    driver: bridge

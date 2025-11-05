@@ -17,6 +17,8 @@ import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
 import sum25.studentcode.backend.modules.PracticeSession.repository.PracticeSessionRepository;
 import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
 import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
+import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
+import sum25.studentcode.backend.modules.Packs.repository.PackRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -36,6 +38,8 @@ public class DataSeeder implements CommandLineRunner {
     private final PracticeSessionRepository practiceSessionRepository;
     private final StudentPracticeRepository studentPracticeRepository;
     private final StudentAnswersRepository studentAnswersRepository;
+    private final WalletRepository walletRepository;
+    private final PackRepository packRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -49,6 +53,15 @@ public class DataSeeder implements CommandLineRunner {
                     .role(Role.TEACHER)
                     .build();
             userRepository.save(teacher);
+
+            // Tạo wallet cho teacher
+            Wallet teacherWallet = Wallet.builder()
+                    .user(teacher)
+                    .balance(BigDecimal.valueOf(1000.00)) // Số dư ban đầu
+                    .currency("VND")
+                    .isActive(true)
+                    .build();
+            walletRepository.save(teacherWallet);
 
             User student = User.builder()
                     .username("student")
@@ -209,6 +222,36 @@ public class DataSeeder implements CommandLineRunner {
                             .answeredAt(LocalDateTime.now())
                             .build()
             );
+        }
+
+        // 1️⃣2️⃣ PACKS
+        if (packRepository.count() == 0) {
+            // Gói Cơ Bản - 50,000 VND = 50,000 Credit
+            packRepository.save(Pack.builder()
+                    .name("Gói Cơ Bản")
+                    .description("Gói nạp cơ bản cho người mới bắt đầu")
+                    .packValue(BigDecimal.valueOf(50000))
+                    .currency("VND")
+                    .isActive(true)
+                    .build());
+
+            // Gói Tiêu Chuẩn - 100,000 VND = 100,000 Credit
+            packRepository.save(Pack.builder()
+                    .name("Gói Tiêu Chuẩn")
+                    .description("Gói nạp phổ biến cho học sinh thường xuyên")
+                    .packValue(BigDecimal.valueOf(100000))
+                    .currency("VND")
+                    .isActive(true)
+                    .build());
+
+            // Gói Cao Cấp - 250,000 VND = 250,000 Credit
+            packRepository.save(Pack.builder()
+                    .name("Gói Cao Cấp")
+                    .description("Gói nạp cao cấp với giá trị lớn, tiết kiệm hơn")
+                    .packValue(BigDecimal.valueOf(250000))
+                    .currency("VND")
+                    .isActive(true)
+                    .build());
         }
     }
 }

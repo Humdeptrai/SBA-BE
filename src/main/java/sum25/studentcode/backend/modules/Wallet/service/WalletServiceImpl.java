@@ -205,25 +205,7 @@ public class WalletServiceImpl implements WalletService {
         }
         return transactionRepository.existsByExternalReferenceId(externalPaymentId);
     }
-
-    // --- Các phương thức BỊ LOẠI BỎ vì rủi ro ---
-
-    /*
-    @Override
-    public WalletResponse updateWallet(Long id, WalletRequest request) {
-        // CHỨC NĂNG BỊ LOẠI BỎ: Không được phép cập nhật số dư trực tiếp.
-        // Thay vào đó, dùng depositCredit() hoặc withdrawCredit().
-        throw new UnsupportedOperationException("Direct wallet balance update is not allowed. Use depositCredit() or withdrawCredit() instead.");
-    }
-
-    @Override
-    public void deleteWallet(Long id) {
-        // CHỨC NĂNG BỊ LOẠI BỎ: Không được xóa ví để bảo toàn dữ liệu.
-        // Thay vào đó, dùng updateIsActive(false) nếu cần ngừng sử dụng.
-        throw new UnsupportedOperationException("Direct wallet deletion is not allowed. Use updateIsActive(false) instead.");
-    }
-    */
-
+    
     // --- Helper (Giữ nguyên) ---
 
     private WalletResponse convertToResponse(Wallet wallet) {

@@ -75,7 +75,6 @@ public class OrderServiceImpl implements OrderService {
     public void completeOrderSuccess(Order order, String externalRefId) {
         if (order.getStatus() != Order.OrderStatus.PENDING) return;
 
-        // KHÔNG GỌI walletService.depositCredit() Ở ĐÂY NỮA
 
         // Cập nhật Order cuối cùng
         order.setStatus(Order.OrderStatus.COMPLETED); // Đã sửa từ PAID thành COMPLETED (cho luồng an toàn)

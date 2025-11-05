@@ -70,28 +70,28 @@ public class PayPalService {
      * Hỗ trợ tự động chuyển đổi từ VNĐ sang USD để tương thích với PayPal Sandbox.
      */
     public PayPalPaymentResponse createPaymentRequest(PackPurchaseRequest request, Long userId) {
-        // 1️⃣ Lấy thông tin pack
+        // ⃣ Lấy thông tin pack
         Pack pack = packRepository.findById(request.getPackId())
                 .orElseThrow(() -> new RuntimeException("Pack not found: " + request.getPackId()));
 
-        // 2️⃣ Kiểm tra giá trị gói
+        // ⃣ Kiểm tra giá trị gói
         BigDecimal packValueVnd = pack.getPackValue();
         if (packValueVnd == null || packValueVnd.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Invalid pack value: " + packValueVnd);
         }
 
         // ⚙️ Tỷ giá quy đổi VNĐ → USD (tuỳ chỉnh)
-        BigDecimal exchangeRate = new BigDecimal("23000"); // 1 USD = 23,000 VNĐ
+        BigDecimal exchangeRate = new BigDecimal("25000"); // 1 USD = 25,000 VNĐ
         BigDecimal packValueUsd = packValueVnd.divide(exchangeRate, 2, java.math.RoundingMode.HALF_UP);
 
         // Log thông tin để debug
         log.info("🧾 Creating PayPal payment | Pack ID: {} | User ID: {} | Value: {} VND (~{} USD)",
                 pack.getPackId(), userId, packValueVnd, packValueUsd);
 
-        // 3️⃣ Tạo đơn hàng trạng thái PENDING
+        //  Tạo đơn hàng trạng thái PENDING
         Order order = orderService.createPendingOrder(userId, pack.getPackId());
 
-        // 4️⃣ Chuẩn bị dữ liệu thanh toán PayPal
+        // ⃣ Chuẩn bị dữ liệu thanh toán PayPal
         Amount amount = new Amount();
         amount.setCurrency("USD"); // Sandbox chỉ hỗ trợ các loại tiền như USD, EUR, GBP, ...
         amount.setTotal(String.format("%.2f", packValueUsd)); // Đảm bảo format hợp lệ 2 chữ số thập phân
@@ -117,17 +117,17 @@ public class PayPalService {
         payment.setRedirectUrls(redirectUrls);
 
         try {
-            // 5️⃣ Gọi API PayPal tạo Payment
+            //⃣ Gọi API PayPal tạo Payment
             Payment createdPayment = payment.create(apiContext);
 
-            // 6️⃣ Lấy URL người dùng cần redirect
+            // Lấy URL người dùng cần redirect
             String approvalUrl = createdPayment.getLinks().stream()
                     .filter(link -> "approval_url".equals(link.getRel()))
                     .findFirst()
                     .map(Links::getHref)
                     .orElse(null);
 
-            // 7️⃣ Cập nhật Order và lưu log
+            // Cập nhật Order và lưu log
             order.setPaymentReference(createdPayment.getId());
             orderService.saveOrder(order);
             savePaymentLog(order, createdPayment.toJSON(), "CREATE_PAYMENT_REQUEST");
@@ -135,7 +135,7 @@ public class PayPalService {
             log.info("✅ PayPal payment created successfully | PaymentID={} | ApprovalUrl={}",
                     createdPayment.getId(), approvalUrl);
 
-            // 8️⃣ Trả về phản hồi cho FE
+            //  Trả về phản hồi cho FE
             return PayPalPaymentResponse.builder()
                     .paymentId(createdPayment.getId())
                     .approvalUrl(approvalUrl)
@@ -238,7 +238,7 @@ public class PayPalService {
                 try {
                     // Lấy Order từ paymentReference
                     Order order = orderService.getOrderByPaymentReference(paymentId);
-                    log.info("📦 Found order: {} with status: {}", order.getOrderId(), order.getStatus());
+                    log.info(" Found order: {} with status: {}", order.getOrderId(), order.getStatus());
 
                     if (order.getStatus() != Order.OrderStatus.COMPLETED) {
                         // Lấy thông tin giá trị (USD from PayPal)
