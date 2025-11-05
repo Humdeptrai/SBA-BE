@@ -23,13 +23,13 @@ public class PracticeSessionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public PracticeSessionResponse getPracticeSessionById(@PathVariable Long id) {
         return practiceSessionService.getPracticeSessionById(id);
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public List<PracticeSessionResponse> getAllPracticeSessions() {
         return practiceSessionService.getAllPracticeSessions();
     }
@@ -47,6 +47,7 @@ public class PracticeSessionController {
     }
 
     @GetMapping("/lesson/{lessonId}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public List<PracticeSessionResponse> getPracticeSessionsByLessonId(@PathVariable Long lessonId) {
         return practiceSessionService.getPracticeSessionsByLessonId(lessonId);
     }

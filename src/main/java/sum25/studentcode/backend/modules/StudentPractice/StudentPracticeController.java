@@ -21,13 +21,13 @@ public class StudentPracticeController {
     private final StudentPracticeService studentPracticeService;
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public StudentPracticeResponse getStudentPracticeById(@PathVariable Long id) {
         return studentPracticeService.getStudentPracticeById(id);
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public List<StudentPracticeResponse> getAllStudentPractices() {
         return studentPracticeService.getAllStudentPractices();
     }
@@ -56,14 +56,14 @@ public class StudentPracticeController {
     }
 
     @PostMapping("/enroll")
-    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     public StudentEnrollResponse enrollStudent(@RequestBody StudentEnrollRequest request) {
         return studentPracticeService.enrollStudent(request);
     }
 
     /** 🧩 Học sinh xem danh sách câu hỏi trong lượt luyện tập */
     @GetMapping("/{practiceId}/questions")
-    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     public List<PracticeQuestionResponse> getQuestionsForPractice(
             @PathVariable Long practiceId
     ) {

@@ -7,7 +7,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "student_answers")
+@Table(name = "student_answers",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"student_practice_id", "question_id"}))
 @Getter
 @Setter
 @NoArgsConstructor

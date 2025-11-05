@@ -156,19 +156,38 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
             throw new ApiException("INVALID_STATUS", "Chỉ có thể nộp bài khi đang ở trạng thái IN_PROGRESS.", 400);
 
         // ✅ Load câu trả lời
-        List<StudentAnswers> answers = studentAnswersRepository.findByStudentPractice_PracticeId(practiceId);
-        if (answers.isEmpty()) throw new ApiException("NO_ANSWERS", "Chưa có câu trả lời nào được nộp.", 400);
+        List<StudentAnswers> answers = studentAnswersRepository.findLatestAnswersByPracticeId(practiceId);
 
+        if (answers.isEmpty())
+            throw new ApiException("NO_ANSWERS", "Chưa có câu trả lời nào được nộp.", 400);
+
+        // ✅ Giữ lại bản mới nhất của mỗi câu hỏi
+        answers = answers.stream()
+                .collect(Collectors.groupingBy(a -> a.getQuestion().getQuestionId()))
+                .values().stream()
+                .map(list -> list.stream()
+                        .max(Comparator.comparing(StudentAnswers::getAnsweredAt))
+                        .get())
+                .collect(Collectors.toList()); // ✅ mutable list
+
+        // ✅ Gán danh sách sau khi lọc vào practice
         practice.setStudentAnswers(answers);
+
+        // ✅ Tính tổng điểm chính xác
         BigDecimal totalScore = calculateTotalScore(practice);
 
         practice.setTotalScore(totalScore);
         practice.setSubmitTime(LocalDateTime.now());
         practice.setStatus(StudentPractice.PracticeStatus.SUBMITTED);
+
         studentPracticeRepository.save(practice);
+
+        System.out.println("✅ [SUBMIT] Practice " + practiceId + " submitted with " + answers.size() + " unique questions.");
 
         return convertToResponse(practice);
     }
+
+
 
     @Override
     public StudentPracticeResponse gradePractice(Long practiceId, TeacherGradeRequest request) {
@@ -279,32 +298,45 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
 
         BigDecimal totalScore = BigDecimal.ZERO;
 
-        var grouped = practice.getStudentAnswers().stream()
-                .collect(Collectors.groupingBy(a -> a.getQuestion().getQuestionId()));
+        for (StudentAnswers answer : practice.getStudentAnswers()) {
+            Questions question = answer.getQuestion();
+            if (question == null) continue;
 
-        for (var entry : grouped.entrySet()) {
-            Long qid = entry.getKey();
-            List<StudentAnswers> answers = entry.getValue();
+            // ✅ Lấy thông tin MatrixQuestion để biết marksAllocated
+            Optional<MatrixQuestion> mqOpt = matrixQuestionRepository.findByQuestion_QuestionId(question.getQuestionId())
+                    .stream().findFirst();
 
-            BigDecimal marks = matrixQuestionRepository.findByQuestion_QuestionId(qid)
+            BigDecimal marksAllocated = mqOpt.map(MatrixQuestion::getMarksAllocated).orElse(BigDecimal.ZERO);
+
+            // ✅ Nếu marksAllocated = 0 → dùng difficultyScore theo level
+            BigDecimal baseScore;
+            if (marksAllocated.compareTo(BigDecimal.ZERO) == 0) {
+                Double diff = question.getLevel() != null ? question.getLevel().getDifficultyScore() : 1.0;
+                baseScore = BigDecimal.valueOf(diff);
+            } else {
+                baseScore = marksAllocated;
+            }
+
+            // ✅ Tìm các option đúng
+            List<Long> correctIds = optionsRepository.findByQuestion_QuestionId(question.getQuestionId())
                     .stream()
-                    .findFirst()
-                    .map(MatrixQuestion::getMarksAllocated)
-                    .orElse(BigDecimal.ONE);
-
-            List<Long> correctIds = optionsRepository.findByQuestion_QuestionId(qid)
-                    .stream().filter(Options::getIsCorrect)
+                    .filter(Options::getIsCorrect)
                     .map(Options::getOptionId)
                     .toList();
 
-            long correct = answers.stream().filter(a -> correctIds.contains(a.getSelectedOptionId())).count();
-            double ratio = (double) correct / correctIds.size();
-            BigDecimal score = marks.multiply(BigDecimal.valueOf(ratio));
-            totalScore = totalScore.add(score);
+            boolean isCorrect = correctIds.contains(answer.getSelectedOptionId());
+            answer.setIsCorrect(isCorrect);
+            answer.setMarksEarned(isCorrect ? baseScore : BigDecimal.ZERO);
+            studentAnswersRepository.save(answer);
+
+            if (isCorrect) {
+                totalScore = totalScore.add(baseScore);
+            }
         }
 
         return totalScore;
     }
+
 
     private StudentPracticeResponse convertToResponse(StudentPractice sp) {
         StudentPracticeResponse res = new StudentPracticeResponse();

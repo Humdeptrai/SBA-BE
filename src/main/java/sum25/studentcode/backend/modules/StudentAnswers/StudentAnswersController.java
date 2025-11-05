@@ -28,7 +28,7 @@ public class StudentAnswersController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public List<StudentAnswersResponse> getAllStudentAnswers() {
         return studentAnswersService.getAllStudentAnswers();
     }
