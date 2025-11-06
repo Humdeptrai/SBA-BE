@@ -158,8 +158,6 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
         // ✅ Load câu trả lời
         List<StudentAnswers> answers = studentAnswersRepository.findLatestAnswersByPracticeId(practiceId);
 
-        if (answers.isEmpty())
-            throw new ApiException("NO_ANSWERS", "Chưa có câu trả lời nào được nộp.", 400);
 
         // ✅ Giữ lại bản mới nhất của mỗi câu hỏi
         answers = answers.stream()
