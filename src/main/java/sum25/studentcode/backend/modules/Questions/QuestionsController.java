@@ -33,7 +33,8 @@ public class QuestionsController {
 
     @GetMapping("/by/user/{userId}")
     @PreAuthorize("hasRole('TEACHER')")
-    public List<QuestionsResponse> getAllQuestions(@RequestParam("page") int page, @RequestParam("size") int size, @PathVariable Long userId) {
+    public List<QuestionsResponse> getAllQuestions(@RequestParam(value = "page", defaultValue = "0") int page
+            , @RequestParam(value = "size", defaultValue = "10") int size, @PathVariable Long userId) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
         return questionsService.getAllQuestions(pageable, userId);
     }
