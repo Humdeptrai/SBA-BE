@@ -67,8 +67,8 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
     }
 
     @Override
-    public List<PracticeSessionResponse> getAllPracticeSessions() {
-        List<PracticeSession> list = practiceSessionRepository.findAll();
+    public List<PracticeSessionResponse> getAllPracticeSessions(Long userId) {
+        List<PracticeSession> list = practiceSessionRepository.findAllByCreatedBy_UserId(userId);
         if (list.isEmpty())
             throw new ApiException("EMPTY_LIST", "Chưa có buổi luyện tập nào.", 404);
 

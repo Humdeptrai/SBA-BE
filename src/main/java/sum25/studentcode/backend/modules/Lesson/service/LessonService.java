@@ -15,5 +15,5 @@ public interface LessonService {
 
     LessonResponse getLessonById(Long id);
 
-    List<LessonResponse> getAllLessons();
+    List<LessonResponse> getAllLessons(Long userId);
 }

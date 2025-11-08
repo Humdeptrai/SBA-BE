@@ -28,10 +28,10 @@ public class LessonController {
         return lessonService.getLessonById(id);
     }
 
-    @GetMapping
+    @GetMapping("/by/user/{userId}")
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
-    public List<LessonResponse> getAllLessons() {
-        return lessonService.getAllLessons();
+    public List<LessonResponse> getAllLessons(@PathVariable Long userId) {
+        return lessonService.getAllLessons(userId);
     }
 
     @PutMapping("/{id}")

@@ -59,4 +59,7 @@ public class Matrix {
     @OneToMany(mappedBy = "matrix")
     private List<PracticeSession> practiceSessions = new ArrayList<>();;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", referencedColumnName = "user_id")
+    private User createdBy;
 }

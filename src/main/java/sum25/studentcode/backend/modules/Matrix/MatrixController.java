@@ -28,10 +28,10 @@ public class MatrixController {
         return matrixService.getMatrixById(id);
     }
 
-    @GetMapping
+    @GetMapping("/by/user/{userId}")
     @PreAuthorize("hasRole('TEACHER')")
-    public List<MatrixResponse> getAllMatrices() {
-        return matrixService.getAllMatrices();
+    public List<MatrixResponse> getAllMatrices(@PathVariable Long userId) {
+        return matrixService.getAllMatrices(userId);
     }
 
     @PutMapping("/{id}")

@@ -29,10 +29,10 @@ public class PracticeSessionController {
         return practiceSessionService.getPracticeSessionById(id);
     }
 
-    @GetMapping
+    @GetMapping("by/user/{userId}")
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
-    public List<PracticeSessionResponse> getAllPracticeSessions() {
-        return practiceSessionService.getAllPracticeSessions();
+    public List<PracticeSessionResponse> getAllPracticeSessions(@PathVariable Long userId) {
+        return practiceSessionService.getAllPracticeSessions(userId);
     }
 
     @GetMapping("/student")

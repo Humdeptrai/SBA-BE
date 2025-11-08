@@ -34,8 +34,8 @@ public class GradeServiceImpl implements GradeService {
     }
 
     @Override
-    public List<GradeResponse> getAllGrades() {
-        return gradeRepository.findAll().stream()
+    public List<GradeResponse> getAllGrades(Long userId) {
+        return gradeRepository.findAllByCreatedBy_UserId(userId).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }

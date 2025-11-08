@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "matrixQuestionId")
-@ToString(exclude = {"matrix", "question"})
+@ToString(exclude = {"matrix", "question", "createdBy"})
 public class MatrixQuestion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,6 +41,5 @@ public class MatrixQuestion {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
 
 }

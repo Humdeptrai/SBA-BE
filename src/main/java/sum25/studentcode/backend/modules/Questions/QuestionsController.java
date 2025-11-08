@@ -31,11 +31,11 @@ public class QuestionsController {
         return questionsService.getQuestionById(id);
     }
 
-    @GetMapping
+    @GetMapping("/by/user/{userId}")
     @PreAuthorize("hasRole('TEACHER')")
-    public List<QuestionsResponse> getAllQuestions(@RequestParam("page") int page, @RequestParam("size") int size) {
+    public List<QuestionsResponse> getAllQuestions(@RequestParam("page") int page, @RequestParam("size") int size, @PathVariable Long userId) {
         Pageable pageable = Pageable.ofSize(size).withPage(page);
-        return questionsService.getAllQuestions(pageable);
+        return questionsService.getAllQuestions(pageable, userId);
     }
 
     @PutMapping("/{id}")
