@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import sum25.studentcode.backend.model.PracticeSession;
 import sum25.studentcode.backend.model.StudentPractice;
 import sum25.studentcode.backend.model.User;
+import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentPracticeResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,4 +25,8 @@ public interface StudentPracticeRepository extends JpaRepository<StudentPractice
 
     // StudentPracticeRepository.java
     Optional<StudentPractice> findByPracticeSessionAndStudent(PracticeSession practiceSession, User student);
+
+
+    List<StudentPractice> findAllByStudent_UserId(Long studentUserId);
 }
+

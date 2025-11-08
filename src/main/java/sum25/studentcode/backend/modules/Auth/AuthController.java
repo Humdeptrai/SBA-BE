@@ -3,6 +3,7 @@ package sum25.studentcode.backend.modules.Auth;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,6 +20,7 @@ import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
 import sum25.studentcode.backend.security.jwt.JwtUtils;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -40,7 +42,7 @@ public class AuthController {
             if (user.getRole() == Role.TEACHER) {
                 Wallet wallet = Wallet.builder()
                         .user(user)
-                        .balance(BigDecimal.valueOf(0000.00)) // Số dư ban đầu 1000 VND
+                        .balance(BigDecimal.valueOf(250000.00)) // Số dư ban đầu 1000 VND
                         .currency("VND")
                         .isActive(true)
                         .build();
@@ -111,6 +113,12 @@ public class AuthController {
                 .user(userResponse)
                 .message("Login successful")
                 .build();
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<UserResponse> getAllUsers() {
+        return userService.getAllUsers();
     }
 
     @GetMapping("/me")

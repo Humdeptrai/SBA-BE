@@ -5,6 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sum25.studentcode.backend.modules.PracticeSession.dto.request.PracticeSessionRequest;
 import sum25.studentcode.backend.modules.PracticeSession.dto.response.PracticeSessionResponse;
+import sum25.studentcode.backend.modules.PracticeSession.dto.response.PracticeSessionStudentResponse;
 import sum25.studentcode.backend.modules.PracticeSession.service.PracticeSessionService;
 
 import java.util.List;
@@ -34,6 +35,12 @@ public class PracticeSessionController {
         return practiceSessionService.getAllPracticeSessions();
     }
 
+    @GetMapping("/student")
+    @PreAuthorize("hasRole('STUDENT')")
+    public List<PracticeSessionStudentResponse> getAllPracticeSessionsForStudents() {
+        return practiceSessionService.getAllPracticeSessionsForStudents();
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER')")
     public PracticeSessionResponse updatePracticeSession(@PathVariable Long id, @RequestBody PracticeSessionRequest request) {
@@ -46,10 +53,10 @@ public class PracticeSessionController {
         practiceSessionService.deletePracticeSession(id);
     }
 
-    @GetMapping("/lesson/{lessonId}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
-    public List<PracticeSessionResponse> getPracticeSessionsByLessonId(@PathVariable Long lessonId) {
-        return practiceSessionService.getPracticeSessionsByLessonId(lessonId);
-    }
+//    @GetMapping("/lesson/{lessonId}")
+//    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+//    public List<PracticeSessionResponse> getPracticeSessionsByLessonId(@PathVariable Long lessonId) {
+//        return practiceSessionService.getPracticeSessionsByLessonId(lessonId);
+//    }
 
 }

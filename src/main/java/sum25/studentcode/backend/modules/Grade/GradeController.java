@@ -17,31 +17,31 @@ public class GradeController {
     private final GradeService gradeService;
 
     @PostMapping
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public GradeResponse createGrade(@RequestBody GradeRequest request) {
         return gradeService.createGrade(request);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT',  'ADMIN')")
     public GradeResponse getGradeById(@PathVariable Long id) {
         return gradeService.getGradeById(id);
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT' ,  'ADMIN')")
     public List<GradeResponse> getAllGrades() {
         return gradeService.getAllGrades();
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public GradeResponse updateGrade(@PathVariable Long id, @RequestBody GradeRequest request) {
         return gradeService.updateGrade(id, request);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void deleteGrade(@PathVariable Long id) {
         gradeService.deleteGrade(id);
     }

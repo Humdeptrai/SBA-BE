@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import sum25.studentcode.backend.model.StudentPractice;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.StudentEnrollRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.TeacherGradeRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.PracticeQuestionResponse;
@@ -61,7 +62,6 @@ public class StudentPracticeController {
         return studentPracticeService.enrollStudent(request);
     }
 
-    /** 🧩 Học sinh xem danh sách câu hỏi trong lượt luyện tập */
     @GetMapping("/{practiceId}/questions")
     @PreAuthorize("hasRole('STUDENT')")
     public List<PracticeQuestionResponse> getQuestionsForPractice(
@@ -70,4 +70,9 @@ public class StudentPracticeController {
         return studentPracticeService.getQuestionsForPractice(practiceId);
     }
 
+    @GetMapping("/student/records")
+    @PreAuthorize("hasRole('STUDENT')")
+    public List<StudentPracticeResponse> getStudentPracticeRecords() {
+        return studentPracticeService.getStudentPracticeRecords();
+    }
 }

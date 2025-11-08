@@ -29,6 +29,7 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
     private final QuestionsRepository questionsRepository;
 
     @Override
+    @Transactional
     public StudentAnswersResponse createStudentAnswer(StudentAnswersRequest request) {
         StudentPractice studentPractice = studentPracticeRepository.findById(request.getPracticeId())
                 .orElseThrow(() -> new RuntimeException("StudentPractice not found"));
@@ -89,6 +90,7 @@ public class StudentAnswersServiceImpl implements StudentAnswersService {
     }
 
     @Override
+    @Transactional
     public StudentAnswersResponse updateStudentAnswer(Long id, StudentAnswersRequest request) {
         StudentAnswers existing = studentAnswersRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("StudentAnswer not found"));

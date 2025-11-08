@@ -50,7 +50,5 @@ public class Lesson {
     @OneToMany(mappedBy = "lesson", fetch = FetchType.LAZY)
     private List<Questions> questions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "lesson", fetch = FetchType.LAZY)
-    private List<Matrix> matrices = new ArrayList<>();
 
 }

@@ -47,7 +47,6 @@ public class PracticeSession {
     @Column(name = "duration_minutes")
     private Integer durationMinutes;
 
-    // ✅ Thêm JsonFormat cho examDate
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     @Column(name = "exam_date")
     private LocalDateTime examDate;
@@ -63,7 +62,6 @@ public class PracticeSession {
     @OneToMany(mappedBy = "practiceSession", fetch = FetchType.LAZY)
     private List<StudentPractice> studentPractices = new ArrayList<>();
 
-    /** ✅ Quan hệ mới: mỗi session gắn với 1 matrix */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "matrix_id", nullable = false)
     private Matrix matrix;
@@ -74,7 +72,5 @@ public class PracticeSession {
     @Column(name = "auto_close")
     private Boolean autoClose = true; // cho phép tự động đóng khi hết giờ
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lesson_id")
-    private Lesson lesson;
+
 }

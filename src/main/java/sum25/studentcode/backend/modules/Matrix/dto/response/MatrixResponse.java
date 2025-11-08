@@ -12,5 +12,4 @@ public class MatrixResponse {
     private Integer totalQuestions;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Long lessonId; // ✅ thêm
 }

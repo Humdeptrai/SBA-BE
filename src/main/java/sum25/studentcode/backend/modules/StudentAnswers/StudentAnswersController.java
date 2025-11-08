@@ -45,7 +45,6 @@ public class StudentAnswersController {
         studentAnswersService.deleteStudentAnswer(id);
     }
 
-    // ✅ LƯU ĐÁP ÁN TẠM (DRAFT)
     @PostMapping("/save-draft")
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public String saveDraftAnswer(@RequestBody StudentAnswersRequest request) {
@@ -53,7 +52,6 @@ public class StudentAnswersController {
         return "Đã lưu đáp án tạm";
     }
 
-    // ✅ LẤY TẤT CẢ ĐÁP ÁN ĐÃ LƯU
     @GetMapping("/practice/{practiceId}")
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public List<StudentAnswersResponse> getAnswersByPracticeId(@PathVariable Long practiceId) {

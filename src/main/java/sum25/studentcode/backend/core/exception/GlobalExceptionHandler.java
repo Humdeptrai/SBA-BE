@@ -17,12 +17,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import sum25.studentcode.backend.core.response.BaseResponse;
 import sum25.studentcode.backend.core.response.MetaInfo;
 import sum25.studentcode.backend.core.util.MetaBuilder;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
+@Slf4j
 public class GlobalExceptionHandler {
 
     private final MetaBuilder metaBuilder;
@@ -39,11 +41,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(ex.getStatus())
                 .body(BaseResponse.fail(
-                    ex.getMessage(),
-                    ex.getStatus(),
-                    meta,
-                    UUID.randomUUID().toString(),
-                    version
+                        ex.getMessage(),
+                        ex.getStatus(),
+                        meta,
+                        UUID.randomUUID().toString(),
+                        version
                 ));
     }
 
@@ -54,6 +56,7 @@ public class GlobalExceptionHandler {
             errors.put(err.getField(), err.getDefaultMessage());
         }
 
+        log.warn("Validation error occurred: {}", errors);
         MetaInfo meta = metaBuilder.fromRequest(request);
         meta.setDetail("Validation error");
         meta.setTraceId("VALIDATION_FAILED");
@@ -61,11 +64,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(422)
                 .body(BaseResponse.fail(
-                    "Validation Error",
-                    422,
-                    meta,
-                    UUID.randomUUID().toString(),
-                    version
+                        "Validation Error",
+                        422,
+                        meta,
+                        UUID.randomUUID().toString(),
+                        version
                 ));
     }
 
@@ -77,28 +80,28 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.METHOD_NOT_ALLOWED)
                 .body(BaseResponse.fail(
-                    "Method Not Allowed",
-                    HttpStatus.METHOD_NOT_ALLOWED.value(),
-                    meta,
-                    UUID.randomUUID().toString(),
-                    version
+                        "Method Not Allowed",
+                        HttpStatus.METHOD_NOT_ALLOWED.value(),
+                        meta,
+                        UUID.randomUUID().toString(),
+                        version
                 ));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleUnknown(Exception ex, HttpServletRequest request) {
+        log.error("Unknown exception occurred", ex);
         MetaInfo meta = metaBuilder.fromRequest(request);
         meta.setDetail(ex.getMessage());
 
-        ex.printStackTrace();
         return ResponseEntity
                 .status(500)
                 .body(BaseResponse.error(
-                    "Internal Server Error",
-                    500,
-                    meta,
-                    UUID.randomUUID().toString(),
-                    version
+                        "Internal Server Error",
+                        500,
+                        meta,
+                        UUID.randomUUID().toString(),
+                        version
                 ));
     }
 }

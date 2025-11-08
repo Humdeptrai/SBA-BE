@@ -13,9 +13,12 @@ import sum25.studentcode.backend.modules.Auth.dto.response.UserResponse;
 import sum25.studentcode.backend.modules.Auth.repository.UserRepository;
 import sum25.studentcode.backend.modules.Wallet.service.WalletService;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserService implements IUserService {
 
     private final WalletService walletService;
     private final UserRepository userRepository;
@@ -34,8 +37,7 @@ public class UserService {
                 .role(request.getRole() != null ? request.getRole() : Role.STUDENT)
                 .build();
         User savedUser = userRepository.save(user);
-        // ✅ Tạo wallet mặc định cho user mới
-        walletService.initializeNewWallet(user);
+//        walletService.initializeNewWallet(user);
 
         return savedUser;
     }
@@ -70,10 +72,19 @@ public class UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
+    public List<UserResponse> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(this::convertToUserResponse)
+                .collect(Collectors.toList());
+    }
+
     private UserResponse convertToUserResponse(User user) {
         UserResponse response = new UserResponse();
         response.setUsername(user.getUsername());
         response.setUserId(user.getUserId().toString());
+        response.setRole(user.getRole().name());
+
         return response;
     }
 }

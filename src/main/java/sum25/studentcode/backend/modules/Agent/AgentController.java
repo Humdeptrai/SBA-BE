@@ -12,7 +12,7 @@ import java.util.Map;
 public class AgentController {
 
     @Autowired
-    private AgentService agentService;
+    private IAgentService agentService;
 
     @PostMapping("/generate/question")
     public ResponseEntity<List<QuestionSetDTO>> generate(@RequestBody Map<String, String> request) {

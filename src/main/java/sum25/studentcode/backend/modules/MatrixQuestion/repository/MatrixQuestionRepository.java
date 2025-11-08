@@ -16,3 +16,4 @@ public interface MatrixQuestionRepository extends JpaRepository<MatrixQuestion, 
 
     List<MatrixQuestion> findByQuestion_QuestionId(Long questionId);
 }
+

@@ -59,21 +59,6 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
                             .orElseThrow(() -> new ApiException("QUESTION_NOT_FOUND",
                                     "Không tìm thấy câu hỏi ID=" + qId, 404));
 
-                    // ✅ Kiểm tra Lesson của Question và Matrix phải trùng nhau
-                    if (question.getLesson() != null && matrix.getLesson() != null) {
-                        Long questionLessonId = question.getLesson().getLessonId();
-                        Long matrixLessonId = matrix.getLesson().getLessonId();
-                        if (!questionLessonId.equals(matrixLessonId)) {
-                            throw new ApiException("LESSON_MISMATCH",
-                                    String.format("Câu hỏi ID=%d thuộc bài học %d không thể thêm vào ma trận của bài học %d.",
-                                            qId, questionLessonId, matrixLessonId),
-                                    400);
-                        }
-                    } else {
-                        throw new ApiException("LESSON_NULL",
-                                "Câu hỏi hoặc ma trận chưa được gắn với bài học hợp lệ.", 400);
-                    }
-
                     if (matrixQuestionRepository.existsByMatrixAndQuestion(matrix, question)) {
                         throw new ApiException("DUPLICATE_QUESTION",
                                 "Câu hỏi ID=" + qId + " đã tồn tại trong ma trận này.", 400);
@@ -244,20 +229,6 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
             Long qId = request.getQuestionIds().get(0);
             targetQuestion = questionsRepository.findById(qId)
                     .orElseThrow(() -> new ApiException("QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi ID=" + qId, 404));
-        }
-
-        // ✅ Kiểm tra lesson consistency giữa Matrix và Question
-        if (targetMatrix.getLesson() == null || targetQuestion.getLesson() == null) {
-            throw new ApiException("LESSON_NULL", "Câu hỏi hoặc ma trận chưa được gắn với bài học hợp lệ.", 400);
-        }
-
-        Long matrixLessonId = targetMatrix.getLesson().getLessonId();
-        Long questionLessonId = targetQuestion.getLesson().getLessonId();
-
-        if (!matrixLessonId.equals(questionLessonId)) {
-            throw new ApiException("LESSON_MISMATCH",
-                    String.format("Câu hỏi (Lesson %d) không thuộc cùng bài học với ma trận (Lesson %d).",
-                            questionLessonId, matrixLessonId), 400);
         }
 
         // ✅ Kiểm tra trùng lặp: question đó đã tồn tại trong matrix khác chưa

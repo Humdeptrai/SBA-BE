@@ -1,5 +1,6 @@
 package sum25.studentcode.backend.modules.StudentPractice.service;
 
+import sum25.studentcode.backend.model.StudentPractice;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.StudentEnrollRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.TeacherGradeRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.PracticeQuestionResponse;
@@ -18,4 +19,5 @@ public interface StudentPracticeService {
     List<PracticeQuestionResponse> getQuestionsForPractice(Long practiceId);
 
 
+    List<StudentPracticeResponse> getStudentPracticeRecords();
 }

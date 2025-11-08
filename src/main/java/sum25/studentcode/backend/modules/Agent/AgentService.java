@@ -11,19 +11,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import sum25.studentcode.backend.model.*;
+import sum25.studentcode.backend.modules.Auth.service.IUserService;
 import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
 import sum25.studentcode.backend.modules.Level.repository.LevelRepository;
+import sum25.studentcode.backend.modules.MatrixQuestion.repository.MatrixQuestionRepository;
 import sum25.studentcode.backend.modules.Options.repository.OptionsRepository;
 import sum25.studentcode.backend.modules.QuestionType.repository.QuestionTypeRepository;
 import sum25.studentcode.backend.modules.Questions.repository.QuestionsRepository;
+import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
+import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 @Service
-
 @RequiredArgsConstructor
-public class AgentService {
+public class AgentService implements IAgentService{
 
     @Autowired
     private RestTemplate restTemplate;
@@ -33,11 +37,31 @@ public class AgentService {
     private final LevelRepository levelRepository;
     private final QuestionTypeRepository questionTypeRepository;
     private final LessonRepository lessonRepository;
+    private final WalletRepository walletRepository;
+    private final IUserService userService;
+    private final MatrixQuestionRepository matrixQuestionRepository;
+    private final MatrixRepository matrixRepository;
+
     @Autowired
     private AgentSetting agentSetting;
 
     @Transactional
     public List<QuestionSetDTO> sendPostQuestionGenerateRequest(Map<String, String> requestBody) {
+        User user = userService.getCurrentUser();
+        Wallet wallet = walletRepository.findByUser(user);
+        if(wallet == null) {
+            throw new RuntimeException("Wallet not found for user: " + user.getUsername());
+        }
+
+        //haha trừ tiền nhé =))
+        if(wallet.getBalance().compareTo(agentSetting.getCostPerRequest()) < 0) {
+            throw new RuntimeException("Insufficient balance in wallet.");
+        }
+
+        wallet.setBalance(
+                wallet.getBalance().subtract(agentSetting.getCostPerRequest())
+        );
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
@@ -94,6 +118,28 @@ public class AgentService {
         }
 
         return response.getBody();
+    }
+
+    @Transactional
+    public void saveMatrixQuestions(Long matrixId, List<Map<String, Object>> data) {
+        Matrix matrix = matrixRepository.findById(matrixId)
+                .orElseThrow(() -> new RuntimeException("Matrix not found: " + matrixId));
+
+        for (Map<String, Object> item : data) {
+            String questionIdsStr = (String) item.get("questionIds");
+            String[] ids = questionIdsStr.split(",");
+            for (String idStr : ids) {
+                Long questionId = Long.parseLong(idStr.trim());
+                Questions question = questionsRepository.findById(questionId)
+                        .orElseThrow(() -> new RuntimeException("Question not found: " + questionId));
+
+                MatrixQuestion mq = new MatrixQuestion();
+                mq.setMatrix(matrix);
+                mq.setQuestion(question);
+                mq.setMarksAllocated(BigDecimal.ONE); // Default marks allocated
+                matrixQuestionRepository.save(mq);
+            }
+        }
     }
 
 }

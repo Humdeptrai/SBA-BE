@@ -1,11 +1,15 @@
 package sum25.studentcode.backend.modules.Questions.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.model.*;
 import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
 import sum25.studentcode.backend.modules.Level.repository.LevelRepository;
+import sum25.studentcode.backend.modules.MatrixQuestion.repository.MatrixQuestionRepository;
 import sum25.studentcode.backend.modules.Options.dto.response.OptionsResponse;
 import sum25.studentcode.backend.modules.Options.repository.OptionsRepository;
 import sum25.studentcode.backend.modules.QuestionType.repository.QuestionTypeRepository;
@@ -26,6 +30,8 @@ public class QuestionsServiceImpl implements QuestionsService {
     private final LevelRepository levelRepository;
     private final QuestionTypeRepository questionTypeRepository;
     private final OptionsRepository optionsRepository;
+    private final MatrixQuestionRepository matrixQuestionRepository;
+
 
     @Override
     public QuestionsResponse createQuestion(QuestionsRequest request) {
@@ -57,8 +63,8 @@ public class QuestionsServiceImpl implements QuestionsService {
     }
 
     @Override
-    public List<QuestionsResponse> getAllQuestions() {
-        return questionsRepository.findAll().stream()
+    public List<QuestionsResponse> getAllQuestions(Pageable pageable) {
+        return questionsRepository.findAll(pageable).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -124,6 +130,25 @@ public class QuestionsServiceImpl implements QuestionsService {
         return questions.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<QuestionsResponse> getQuestionForMatrixWithUniqueByLevelName(String levelName, Long lessonId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        // Lấy tất cả questionIds đã tồn tại trong MatrixQuestion
+        List<Long> existingQuestionIds = matrixQuestionRepository.findAll().stream()
+                .map(mq -> mq.getQuestion().getQuestionId())
+                .distinct()
+                .collect(Collectors.toList());
+        // Nếu không có question nào trong matrix, lấy tất cả theo level và lesson
+        if (existingQuestionIds.isEmpty()) {
+            Page<Questions> questionsPage = questionsRepository.findByLevel_LevelNameAndLesson_LessonId(levelName, lessonId, pageable);
+            return questionsPage.map(this::convertToResponse);
+        } else {
+            // Lấy những question theo level và lesson mà questionId không nằm trong existingQuestionIds
+            Page<Questions> questionsPage = questionsRepository.findByLevel_LevelNameAndLesson_LessonIdAndQuestionIdNotIn(levelName, lessonId, existingQuestionIds, pageable);
+            return questionsPage.map(this::convertToResponse);
+        }
     }
 
 

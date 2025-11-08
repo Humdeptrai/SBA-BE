@@ -18,7 +18,6 @@ import sum25.studentcode.backend.modules.PracticeSession.repository.PracticeSess
 import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
 import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
 import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
-import sum25.studentcode.backend.modules.Packs.repository.PackRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,29 +38,32 @@ public class DataSeeder implements CommandLineRunner {
     private final StudentPracticeRepository studentPracticeRepository;
     private final StudentAnswersRepository studentAnswersRepository;
     private final WalletRepository walletRepository;
-    private final PackRepository packRepository;
-
     @Override
     public void run(String... args) throws Exception {
         PasswordEncoder encoder = new BCryptPasswordEncoder();
 
-        // 1️⃣ USER
         if (userRepository.count() == 0) {
             User teacher = User.builder()
-                    .username("admin")
-                    .password(encoder.encode("admin123"))
+                    .username("teacher")
+                    .password(encoder.encode("teacher123"))
                     .role(Role.TEACHER)
                     .build();
             userRepository.save(teacher);
 
-            // Tạo wallet cho teacher
-            Wallet teacherWallet = Wallet.builder()
+            Wallet wallet = Wallet.builder()
                     .user(teacher)
-                    .balance(BigDecimal.valueOf(1000.00)) // Số dư ban đầu
+                    .balance(BigDecimal.valueOf(1111000.00)) // Số dư ban đầu 1000 VND
                     .currency("VND")
                     .isActive(true)
                     .build();
-            walletRepository.save(teacherWallet);
+            walletRepository.save(wallet);
+
+            User admin = User.builder()
+                    .username("admin")
+                    .password(encoder.encode("admin123"))
+                    .role(Role.ADMIN)
+                    .build();
+            userRepository.save(admin);
 
             User student = User.builder()
                     .username("student")
@@ -71,7 +73,6 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(student);
         }
 
-        // 2️⃣ GRADE
         if (gradeRepository.count() == 0) {
             gradeRepository.save(Grade.builder()
                     .gradeLevel("Grade 10")
@@ -79,20 +80,18 @@ public class DataSeeder implements CommandLineRunner {
                     .build());
         }
 
-        // 3️⃣ LESSON
         if (lessonRepository.count() == 0) {
             Grade grade = gradeRepository.findAll().get(0);
             lessonRepository.save(
                     Lesson.builder()
                             .grade(grade)
-                            .lessonTitle("Algebra Basics")
-                            .lessonContent("Introduction to equations and variables")
-                            .lessonObjectives("Help students understand basic algebra concepts")
+                            .lessonTitle("English Basics")
+                            .lessonContent("Introduction to English vocabulary and grammar")
+                            .lessonObjectives("Help students understand basic English concepts")
                             .build()
             );
         }
 
-        // 4️⃣ LEVEL
         if (levelRepository.count() == 0) {
             levelRepository.save(Level.builder()
                     .levelName("Easy")
@@ -106,7 +105,6 @@ public class DataSeeder implements CommandLineRunner {
                     .build());
         }
 
-        // 5️⃣ QUESTION TYPE
         if (questionTypeRepository.count() == 0) {
             questionTypeRepository.save(QuestionType.builder()
                     .typeName("Multiple Choice")
@@ -115,19 +113,16 @@ public class DataSeeder implements CommandLineRunner {
                     .build());
         }
 
-        // 6️⃣ MATRIX (Exam đã bị xóa, Matrix độc lập)
         if (matrixRepository.count() == 0) {
-            Lesson lesson = lessonRepository.findAll().get(0);
             Matrix matrix = Matrix.builder()
-                    .lesson(lesson)
-                    .matrixName("Matrix Algebra 1")
-                    .description("Cấu trúc đề toán đại số cơ bản")
+                    .matrixName("English Grammar 1")
+                    .description("Basic English grammar structure")
                     .totalQuestions(2)
+                    .totalMarks(BigDecimal.valueOf(100))
                     .build();
             matrixRepository.save(matrix);
         }
 
-        // 7️⃣ QUESTIONS
         if (questionsRepository.count() == 0) {
             Lesson lesson = lessonRepository.findAll().get(0);
             Level easy = levelRepository.findAll().get(0);
@@ -137,9 +132,9 @@ public class DataSeeder implements CommandLineRunner {
                     .lesson(lesson)
                     .level(easy)
                     .questionType(mcq)
-                    .questionText("What is 2 + 2?")
-                    .correctAnswer("4")
-                    .explanation("Basic addition")
+                    .questionText("What is the synonym of 'happy'?")
+                    .correctAnswer("joyful")
+                    .explanation("Basic vocabulary")
                     .build();
             questionsRepository.save(q1);
 
@@ -147,39 +142,36 @@ public class DataSeeder implements CommandLineRunner {
                     .lesson(lesson)
                     .level(easy)
                     .questionType(mcq)
-                    .questionText("What is 5 - 3?")
-                    .correctAnswer("2")
-                    .explanation("Basic subtraction")
+                    .questionText("Choose the correct form: She ___ to school.")
+                    .correctAnswer("goes")
+                    .explanation("Present simple tense")
                     .build();
             questionsRepository.save(q2);
         }
 
-        // 8️⃣ OPTIONS
         if (optionsRepository.count() == 0) {
             Questions q1 = questionsRepository.findAll().get(0);
             optionsRepository.save(Options.builder()
-                    .question(q1).optionText("3").isCorrect(false).optionOrder(1).build());
+                    .question(q1).optionText("sad").isCorrect(false).optionOrder(1).build());
             optionsRepository.save(Options.builder()
-                    .question(q1).optionText("4").isCorrect(true).optionOrder(2).build());
+                    .question(q1).optionText("joyful").isCorrect(true).optionOrder(2).build());
 
             Questions q2 = questionsRepository.findAll().get(1);
             optionsRepository.save(Options.builder()
-                    .question(q2).optionText("1").isCorrect(false).optionOrder(1).build());
+                    .question(q2).optionText("go").isCorrect(false).optionOrder(1).build());
             optionsRepository.save(Options.builder()
-                    .question(q2).optionText("2").isCorrect(true).optionOrder(2).build());
+                    .question(q2).optionText("goes").isCorrect(true).optionOrder(2).build());
         }
 
-        // 9️⃣ PRACTICE SESSION (Exam bị xóa, giờ gắn trực tiếp với Matrix)
         if (practiceSessionRepository.count() == 0) {
-            User teacher = userRepository.findByUsername("admin")
+            User teacher = userRepository.findByUsername("teacher")
                     .orElseThrow(() -> new RuntimeException("Admin user not found"));
             Matrix matrix = matrixRepository.findAll().get(0);
 
             PracticeSession session = PracticeSession.builder()
                     .matrix(matrix)
-                    .lesson(matrix.getLesson())
-                    .sessionName("Math Practice Session 1")
-                    .sessionCode("ALGEBRA001")
+                    .sessionName("English Practice Session 1")
+                    .sessionCode("ENGLISH001")
                     .teacher(teacher)
                     .isActive(true)
                     .maxParticipants(30)
@@ -192,7 +184,6 @@ public class DataSeeder implements CommandLineRunner {
             practiceSessionRepository.save(session);
         }
 
-        // 🔟 STUDENT PRACTICE
         if (studentPracticeRepository.count() == 0) {
             User student = userRepository.findByUsername("student").orElseThrow();
             PracticeSession session = practiceSessionRepository.findAll().get(0);
@@ -207,7 +198,6 @@ public class DataSeeder implements CommandLineRunner {
             studentPracticeRepository.save(practice);
         }
 
-        // 1️⃣1️⃣ STUDENT ANSWER
         if (studentAnswersRepository.count() == 0) {
             StudentPractice practice = studentPracticeRepository.findAll().get(0);
             Questions q1 = questionsRepository.findAll().get(0);
@@ -222,36 +212,6 @@ public class DataSeeder implements CommandLineRunner {
                             .answeredAt(LocalDateTime.now())
                             .build()
             );
-        }
-
-        // 1️⃣2️⃣ PACKS
-        if (packRepository.count() == 0) {
-            // Gói Cơ Bản - 50,000 VND = 50,000 Credit
-            packRepository.save(Pack.builder()
-                    .name("Gói Cơ Bản")
-                    .description("Gói nạp cơ bản cho người mới bắt đầu")
-                    .packValue(BigDecimal.valueOf(50000))
-                    .currency("VND")
-                    .isActive(true)
-                    .build());
-
-            // Gói Tiêu Chuẩn - 100,000 VND = 100,000 Credit
-            packRepository.save(Pack.builder()
-                    .name("Gói Tiêu Chuẩn")
-                    .description("Gói nạp phổ biến cho học sinh thường xuyên")
-                    .packValue(BigDecimal.valueOf(100000))
-                    .currency("VND")
-                    .isActive(true)
-                    .build());
-
-            // Gói Cao Cấp - 250,000 VND = 250,000 Credit
-            packRepository.save(Pack.builder()
-                    .name("Gói Cao Cấp")
-                    .description("Gói nạp cao cấp với giá trị lớn, tiết kiệm hơn")
-                    .packValue(BigDecimal.valueOf(250000))
-                    .currency("VND")
-                    .isActive(true)
-                    .build());
         }
     }
 }

@@ -18,7 +18,6 @@ public class JwtUtils {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    // ✅ 1 ngày = 24h * 60m * 60s * 1000ms = 86_400_000 ms
     private static final long ONE_DAY = 24 * 60 * 60 * 1000;
 
     private SecretKey getSigningKey() {
@@ -26,37 +25,34 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /** ✅ Tạo JWT token có thời hạn 1 ngày */
     public String generateToken(User userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", userDetails.getRole());
-        claims.put("userId", userDetails.getUserId()); // ✅ Thêm userId vào token
+        claims.put("userId", userDetails.getUserId());
 
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + ONE_DAY)) // ✅ token sống 1 ngày
+                .setExpiration(new Date(System.currentTimeMillis() + ONE_DAY))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    /** ✅ Lấy username từ token */
     public String extractUsername(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
-                .setAllowedClockSkewSeconds(300) // ✅ cho phép lệch 5 phút
+                .setAllowedClockSkewSeconds(300)
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
     }
 
-    /** ✅ Lấy userId từ token */
     public Long extractUserId(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
-                .setAllowedClockSkewSeconds(300) // ✅ cho phép lệch 5 phút
+                .setAllowedClockSkewSeconds(300)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -75,7 +71,6 @@ public class JwtUtils {
         return null;
     }
 
-    /** ✅ Lấy role từ token */
     public String extractRole(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -87,12 +82,11 @@ public class JwtUtils {
         return (String) claims.get("roles");
     }
 
-    /** ✅ Kiểm tra token hợp lệ */
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
-                    .setAllowedClockSkewSeconds(300) // ✅ cho phép lệch 5 phút
+                    .setAllowedClockSkewSeconds(300)
                     .build()
                     .parseClaimsJws(token);
             return true;

@@ -4,47 +4,77 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.core.exception.ApiException;
-import sum25.studentcode.backend.model.Matrix;
-import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
+import sum25.studentcode.backend.model.*;
 import sum25.studentcode.backend.modules.Matrix.dto.request.MatrixRequest;
 import sum25.studentcode.backend.modules.Matrix.dto.response.MatrixResponse;
 import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
+import sum25.studentcode.backend.modules.MatrixQuestion.repository.MatrixQuestionRepository;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-@Service
 @RequiredArgsConstructor
 @Transactional
+@Service
 public class MatrixServiceImpl implements MatrixService {
 
     private final MatrixRepository matrixRepository;
-    private final LessonRepository lessonRepository;
+    private final MatrixQuestionRepository matrixQuestionRepository;
+
 
     @Override
     public MatrixResponse createMatrix(MatrixRequest request) {
-        var lesson = lessonRepository.findById(request.getLessonId())
-                .orElseThrow(() -> new ApiException("LESSON_NOT_FOUND", "Không tìm thấy bài học.", 404));
-
-        // 🔍 Kiểm tra trùng tên trong cùng bài học
-        if (matrixRepository.existsByMatrixNameAndLesson_LessonId(request.getMatrixName(), request.getLessonId())) {
-            throw new ApiException("DUPLICATE_MATRIX_NAME",
-                    String.format("Ma trận với tên '%s' đã tồn tại trong bài học này.", request.getMatrixName()), 400);
-        }
+        // Calculate totalQuestions from agentResult
+        int totalQuestions = request.getAgentResult().stream()
+                .mapToInt(MatrixRequest.AgentResult::getActualCount)
+                .sum();
+        BigDecimal totalMarks = BigDecimal.valueOf(totalQuestions);
 
         Matrix matrix = Matrix.builder()
                 .matrixName(request.getMatrixName())
                 .description(request.getDescription())
-                .totalQuestions(request.getTotalQuestions())
-                .lesson(lesson)
+                .totalQuestions(totalQuestions)
+                .totalMarks(totalMarks)
                 .build();
+
+        List<MatrixAllocation> allocations = parseDistribution(request.getDistribution(), matrix);
+        matrix.setMatrixAllocations(allocations);
+
+        // Create a map for quick lookup of allocation by knowledgeLevel
+        Map<String, MatrixAllocation> levelToAllocation = allocations.stream()
+                .collect(Collectors.toMap(MatrixAllocation::getKnowledgeLevel, alloc -> alloc));
+
+        // Create MatrixQuestion from agentResult
+        for (MatrixRequest.AgentResult result : request.getAgentResult()) {
+            MatrixAllocation allocation = levelToAllocation.get(result.getLevelName());
+            if (allocation != null) {
+                BigDecimal marksPerQuestion = allocation.getMarksAllocated()
+                        .divide(BigDecimal.valueOf(allocation.getQuestionCount()), RoundingMode.HALF_UP);
+                String[] questionIdStrings = result.getQuestionIds().split(",");
+                for (String quesIdStr : questionIdStrings) {
+                    Long questionId = Long.parseLong(quesIdStr.trim());
+                    Questions question = new Questions();
+                    question.setQuestionId(questionId);
+                    MatrixQuestion matrixQuestion = MatrixQuestion.builder()
+                            .matrix(matrix)
+                            .question(question)
+                            .marksAllocated(marksPerQuestion)
+                            .build();
+                    matrixQuestionRepository.save(matrixQuestion);
+//                    matrix.getMatrixQuestions().add(matrixQuestion);
+                }
+            }
+        }
 
         matrix = matrixRepository.save(matrix);
         return convertToResponse(matrix);
     }
 
 
-    /** ✅ Lấy chi tiết ma trận */
     @Override
     public MatrixResponse getMatrixById(Long id) {
         Matrix matrix = matrixRepository.findById(id)
@@ -52,7 +82,6 @@ public class MatrixServiceImpl implements MatrixService {
         return convertToResponse(matrix);
     }
 
-    /** ✅ Lấy danh sách tất cả ma trận */
     @Override
     public List<MatrixResponse> getAllMatrices() {
         List<Matrix> matrices = matrixRepository.findAll();
@@ -62,43 +91,32 @@ public class MatrixServiceImpl implements MatrixService {
         return matrices.stream().map(this::convertToResponse).collect(Collectors.toList());
     }
 
-    /** ✅ Cập nhật ma trận */
     @Override
     public MatrixResponse updateMatrix(Long id, MatrixRequest request) {
         Matrix matrix = matrixRepository.findById(id)
                 .orElseThrow(() -> new ApiException("MATRIX_NOT_FOUND", "Không tìm thấy ma trận đề thi.", 404));
 
-        Long targetLessonId = request.getLessonId() != null
-                ? request.getLessonId()
-                : (matrix.getLesson() != null ? matrix.getLesson().getLessonId() : null);
-
-        if (targetLessonId == null) {
-            throw new ApiException("LESSON_ID_REQUIRED", "Ma trận phải thuộc về một bài học.", 400);
-        }
-
-        // 🔍 Kiểm tra trùng tên (trừ chính nó)
-        if (matrixRepository.existsByMatrixNameAndLesson_LessonIdAndMatrixIdNot(
-                request.getMatrixName(), targetLessonId, id)) {
-            throw new ApiException("DUPLICATE_MATRIX_NAME",
-                    String.format("Đã tồn tại ma trận với tên '%s' trong bài học này.", request.getMatrixName()), 400);
-        }
+        // Calculate totalQuestions from agentResult
+        int totalQuestions = request.getAgentResult().stream()
+                .mapToInt(MatrixRequest.AgentResult::getActualCount)
+                .sum();
+        BigDecimal totalMarks = BigDecimal.valueOf(totalQuestions);
 
         matrix.setMatrixName(request.getMatrixName());
         matrix.setDescription(request.getDescription());
-        matrix.setTotalQuestions(request.getTotalQuestions());
+        matrix.setTotalQuestions(totalQuestions);
+        matrix.setTotalMarks(totalMarks);
 
-        if (request.getLessonId() != null) {
-            var lesson = lessonRepository.findById(request.getLessonId())
-                    .orElseThrow(() -> new ApiException("LESSON_NOT_FOUND", "Không tìm thấy bài học.", 404));
-            matrix.setLesson(lesson);
-        }
+        // Re-parse distribution and update allocations
+        List<MatrixAllocation> allocations = parseDistribution(request.getDistribution(), matrix);
+        matrix.getMatrixAllocations().clear();
+        matrix.getMatrixAllocations().addAll(allocations);
 
         matrix = matrixRepository.save(matrix);
         return convertToResponse(matrix);
     }
 
 
-    /** ✅ Xoá ma trận */
     @Override
     public void deleteMatrix(Long id) {
         if (!matrixRepository.existsById(id)) {
@@ -107,7 +125,6 @@ public class MatrixServiceImpl implements MatrixService {
         matrixRepository.deleteById(id);
     }
 
-    /** ✅ Convert Entity → DTO */
     private MatrixResponse convertToResponse(Matrix matrix) {
         MatrixResponse response = new MatrixResponse();
         response.setMatrixId(matrix.getMatrixId());
@@ -116,8 +133,40 @@ public class MatrixServiceImpl implements MatrixService {
         response.setTotalQuestions(matrix.getTotalQuestions());
         response.setCreatedAt(matrix.getCreatedAt());
         response.setUpdatedAt(matrix.getUpdatedAt());
-        response.setLessonId(matrix.getLesson() != null ? matrix.getLesson().getLessonId() : null);
+
 
         return response;
+    }
+
+    private List<MatrixAllocation> parseDistribution(String distribution, Matrix matrix) {
+        List<MatrixAllocation> allocations = new ArrayList<>();
+        int totalQuestions = matrix.getTotalQuestions();
+        BigDecimal totalMarks = matrix.getTotalMarks();
+        String[] pairs = distribution.split(",");
+        for (String pair : pairs) {
+            System.out.println("Distribution Pairs: "+ pair);
+
+            String[] keyValue = pair.split(":");
+            System.out.println("Distribution keyValue: "+ keyValue);
+
+            if (keyValue.length == 2) {
+                String knowledgeLevel = keyValue[0];
+                BigDecimal percent = new BigDecimal(keyValue[1]);
+                int questionCount = percent.multiply(BigDecimal.valueOf(totalQuestions)).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP).intValue();
+                BigDecimal marksAllocated = percent.multiply(totalMarks).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP);
+
+                MatrixAllocation allocation = MatrixAllocation.builder()
+                        .matrix(matrix)
+                        .knowledgeLevel(knowledgeLevel)
+                        .percentAllocation(percent)
+                        .questionCount(questionCount)
+                        .marksAllocated(marksAllocated)
+                        .build();
+                allocations.add(allocation);
+            } else {
+                throw new ApiException("INVALID_DISTRIBUTION_FORMAT", "Định dạng phân phối không hợp lệ.", 400);
+            }
+        }
+        return allocations;
     }
 }

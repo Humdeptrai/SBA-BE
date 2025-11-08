@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 
 @Data
 public class PracticeSessionRequest {
-    private Long lessonId;
     private Long matrixId;              // Gắn với Matrix (bộ câu hỏi)
     private String sessionCode;         // Mã đề thi / mã buổi
     private String sessionName;         // Tên buổi thi

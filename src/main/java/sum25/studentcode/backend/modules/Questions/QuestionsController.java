@@ -1,6 +1,8 @@
 package sum25.studentcode.backend.modules.Questions;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sum25.studentcode.backend.modules.Options.dto.response.OptionsResponse;
@@ -31,8 +33,9 @@ public class QuestionsController {
 
     @GetMapping
     @PreAuthorize("hasRole('TEACHER')")
-    public List<QuestionsResponse> getAllQuestions() {
-        return questionsService.getAllQuestions();
+    public List<QuestionsResponse> getAllQuestions(@RequestParam("page") int page, @RequestParam("size") int size) {
+        Pageable pageable = Pageable.ofSize(size).withPage(page);
+        return questionsService.getAllQuestions(pageable);
     }
 
     @PutMapping("/{id}")
@@ -47,17 +50,24 @@ public class QuestionsController {
         questionsService.deleteQuestion(id);
     }
 
-    // ✅ Lấy tất cả đáp án (options) của 1 câu hỏi
     @GetMapping("/{questionId}/options")
     @PreAuthorize("hasRole('TEACHER')")
     public List<OptionsResponse> getOptionsByQuestionId(@PathVariable Long questionId) {
         return questionsService.getOptionsByQuestionId(questionId);
     }
-    // ✅ Lấy tất cả câu hỏi theo lessonId
     @GetMapping("/lesson/{lessonId}")
     @PreAuthorize("hasRole('TEACHER')")
     public List<QuestionsResponse> getQuestionsByLessonId(@PathVariable Long lessonId) {
         return questionsService.getQuestionsByLessonId(lessonId);
+    }
+
+    @GetMapping("/level")
+    @PreAuthorize("hasRole('TEACHER')")
+    public Page<QuestionsResponse> getQuestionForMatrixWithUniqueByLevelName(@RequestParam String levelName,
+                                                                             @RequestParam Long lessonId,
+                                                                             @RequestParam int page,
+                                                                             @RequestParam int size) {
+        return questionsService.getQuestionForMatrixWithUniqueByLevelName(levelName,lessonId, page, size);
     }
 
 }
