@@ -9,7 +9,7 @@ import java.util.List;
 public interface PracticeSessionService {
     PracticeSessionResponse createPracticeSession(PracticeSessionRequest request);
     PracticeSessionResponse getPracticeSessionById(Long id);
-    List<PracticeSessionResponse> getAllPracticeSessions();
+    List<PracticeSessionResponse> getAllPracticeSessions(Long userId);
     List<PracticeSessionStudentResponse> getAllPracticeSessionsForStudents();
     PracticeSessionResponse updatePracticeSession(Long id, PracticeSessionRequest request);
     void deletePracticeSession(Long id);

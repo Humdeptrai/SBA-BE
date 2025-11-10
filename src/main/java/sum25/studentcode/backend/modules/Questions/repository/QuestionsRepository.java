@@ -1,5 +1,6 @@
 package sum25.studentcode.backend.modules.Questions.repository;
 
+import io.micrometer.common.KeyValues;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,4 +17,6 @@ public interface QuestionsRepository extends JpaRepository<Questions, Long> {
     Page<Questions> findByLevel_LevelNameAndLesson_LessonId(String levelLevelName, Long lessonLessonId, Pageable pageable);
 
     Page<Questions> findByLevel_LevelNameAndLesson_LessonIdAndQuestionIdNotIn(String levelLevelName, Long lessonLessonId, List<Long> questionIds, Pageable pageable);
+
+    List<Questions> findAllByCreatedBy_UserId(Long createdByUserId, Pageable pageable);
 }

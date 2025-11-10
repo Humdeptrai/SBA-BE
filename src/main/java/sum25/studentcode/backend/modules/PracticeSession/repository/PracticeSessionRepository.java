@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface PracticeSessionRepository extends JpaRepository<PracticeSession, Long> {
     List<PracticeSession> findAllBySessionCode(String sessionCode);
+
+    List<PracticeSession> findAllByCreatedBy_UserId(Long createdByUserId);
 }

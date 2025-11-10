@@ -17,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "lessonId")
-@ToString(exclude = {"grade"})
+@ToString(exclude = {"grade", "createdBy"})
 public class Lesson {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,6 +49,10 @@ public class Lesson {
 
     @OneToMany(mappedBy = "lesson", fetch = FetchType.LAZY)
     private List<Questions> questions = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", referencedColumnName = "user_id")
+    private User createdBy;
 
 
 }

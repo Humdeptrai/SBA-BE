@@ -18,7 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "sessionId")
-@ToString(exclude = {"studentPractices", "exam", "student", "teacher"})
+@ToString(exclude = {"studentPractices", "teacher", "createdBy"})
 public class PracticeSession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -71,6 +71,10 @@ public class PracticeSession {
 
     @Column(name = "auto_close")
     private Boolean autoClose = true; // cho phép tự động đóng khi hết giờ
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", referencedColumnName = "user_id")
+    private User createdBy;
 
 
 }

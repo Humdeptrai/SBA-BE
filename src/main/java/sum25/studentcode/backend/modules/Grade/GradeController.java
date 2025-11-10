@@ -28,10 +28,10 @@ public class GradeController {
         return gradeService.getGradeById(id);
     }
 
-    @GetMapping
+    @GetMapping("/by/user/{userId}")
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT' ,  'ADMIN')")
-    public List<GradeResponse> getAllGrades() {
-        return gradeService.getAllGrades();
+    public List<GradeResponse> getAllGrades(@PathVariable Long userId) {
+        return gradeService.getAllGrades(userId);
     }
 
     @PutMapping("/{id}")

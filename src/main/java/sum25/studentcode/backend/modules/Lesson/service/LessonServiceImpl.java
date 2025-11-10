@@ -80,8 +80,8 @@ public class LessonServiceImpl implements LessonService {
     }
 
     @Override
-    public List<LessonResponse> getAllLessons() {
-        return lessonRepository.findAll()
+    public List<LessonResponse> getAllLessons(Long userId) {
+        return lessonRepository.findAllByCreatedBy_UserId(userId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());

@@ -11,7 +11,7 @@
     public interface QuestionsService {
         QuestionsResponse createQuestion(QuestionsRequest request);
         QuestionsResponse getQuestionById(Long id);
-        List<QuestionsResponse> getAllQuestions(Pageable pageable);
+        List<QuestionsResponse> getAllQuestions(Pageable pageable , Long userId);
         QuestionsResponse updateQuestion(Long id, QuestionsRequest request);
         void deleteQuestion(Long id);
         List<OptionsResponse> getOptionsByQuestionId(Long questionId);

@@ -8,7 +8,7 @@ import java.util.List;
 public interface MatrixService {
     MatrixResponse createMatrix(MatrixRequest request);
     MatrixResponse getMatrixById(Long id);
-    List<MatrixResponse> getAllMatrices();
+    List<MatrixResponse> getAllMatrices(Long userId);
     MatrixResponse updateMatrix(Long id, MatrixRequest request);
     void deleteMatrix(Long id);
 }

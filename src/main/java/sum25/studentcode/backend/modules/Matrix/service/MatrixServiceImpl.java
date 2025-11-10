@@ -83,9 +83,9 @@ public class MatrixServiceImpl implements MatrixService {
     }
 
     @Override
-    public List<MatrixResponse> getAllMatrices() {
-        List<Matrix> matrices = matrixRepository.findAll();
-        if (matrices.isEmpty()) {
+    public List<MatrixResponse> getAllMatrices(Long userId) {
+        List<Matrix> matrices = matrixRepository.findAllByCreatedBy_UserId(userId);
+        if(matrices.isEmpty()) {
             throw new ApiException("EMPTY_LIST", "Chưa có ma trận nào.", 404);
         }
         return matrices.stream().map(this::convertToResponse).collect(Collectors.toList());

@@ -8,7 +8,7 @@ import java.util.List;
 public interface GradeService {
     GradeResponse createGrade(GradeRequest request);
     GradeResponse getGradeById(Long id);
-    List<GradeResponse> getAllGrades();
+    List<GradeResponse> getAllGrades(Long userId);
     GradeResponse updateGrade(Long id, GradeRequest request);
     void deleteGrade(Long id);
 }

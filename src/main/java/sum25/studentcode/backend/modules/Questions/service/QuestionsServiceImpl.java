@@ -63,8 +63,8 @@ public class QuestionsServiceImpl implements QuestionsService {
     }
 
     @Override
-    public List<QuestionsResponse> getAllQuestions(Pageable pageable) {
-        return questionsRepository.findAll(pageable).stream()
+    public List<QuestionsResponse> getAllQuestions(Pageable pageable, Long userId) {
+        return questionsRepository.findAllByCreatedBy_UserId(userId, pageable).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
