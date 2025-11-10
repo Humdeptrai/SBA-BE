@@ -32,6 +32,8 @@ public class Level {
     
     @Lob
     private String description;
+
+
     
     @CreationTimestamp
     @Column(name = "created_at")

@@ -64,4 +64,6 @@ public class PaymentLog {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
 }

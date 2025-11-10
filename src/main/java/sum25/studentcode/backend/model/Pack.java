@@ -48,4 +48,6 @@ public class Pack {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
 }

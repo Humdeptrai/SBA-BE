@@ -115,6 +115,7 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
 
     /** ✅ Lấy danh sách câu hỏi + options trong 1 matrix */
     @Override
+    @Transactional(readOnly = true)
     public List<MatrixQuestionWithOptionsResponse> getQuestionsWithOptionsByMatrixId(Long matrixId) {
         List<MatrixQuestion> list = matrixQuestionRepository.findByMatrix_MatrixId(matrixId);
         if (list.isEmpty()) {
@@ -160,6 +161,7 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MatrixQuestionWithOptionsResponse> getAllMatrixQuestions() {
         List<MatrixQuestion> list = matrixQuestionRepository.findAll();
         if (list.isEmpty()) {
@@ -179,6 +181,7 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MatrixQuestionWithOptionsResponse getMatrixQuestionById(Long id) {
         MatrixQuestion mq = matrixQuestionRepository.findById(id)
                 .orElseThrow(() -> new ApiException("MATRIX_QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi trong ma trận.", 404));

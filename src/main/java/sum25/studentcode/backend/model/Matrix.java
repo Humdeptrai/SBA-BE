@@ -51,12 +51,10 @@ public class Matrix {
     @Builder.Default
     private Boolean isActive = true;
 
-
     @OneToMany(mappedBy = "matrix", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<MatrixAllocation> matrixAllocations = new ArrayList<>();
 
     @OneToMany(mappedBy = "matrix")
     private List<PracticeSession> practiceSessions = new ArrayList<>();;
-
 }
