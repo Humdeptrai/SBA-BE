@@ -18,4 +18,16 @@ public class LessonRequest {
     private String lessonObjectives;
 
     private Long gradeId; // optional
+
+    private Integer gradeLevel;
+
+    private String lessonType;
+
+    private Integer durationMinutes;
+
+    private String methodology;
+
+    private String materials;
+
+    private String homework;
 }

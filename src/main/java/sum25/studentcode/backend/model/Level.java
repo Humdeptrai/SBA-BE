@@ -45,4 +45,9 @@ public class Level {
     
     @OneToMany(mappedBy = "level", fetch = FetchType.LAZY)
     private List<Questions> questions = new ArrayList<>();
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User createdBy;
 }
+

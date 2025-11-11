@@ -2,6 +2,7 @@ package sum25.studentcode.backend.modules.Grade.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.model.Grade;
 import sum25.studentcode.backend.modules.Grade.dto.request.GradeRequest;
 import sum25.studentcode.backend.modules.Grade.dto.response.GradeResponse;
@@ -17,6 +18,7 @@ public class GradeServiceImpl implements GradeService {
     private final GradeRepository gradeRepository;
 
     @Override
+    @Transactional
     public GradeResponse createGrade(GradeRequest request) {
         Grade grade = Grade.builder()
                 .gradeLevel(request.getGradeLevel())
@@ -27,6 +29,7 @@ public class GradeServiceImpl implements GradeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public GradeResponse getGradeById(Long id) {
         Grade grade = gradeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Grade not found"));
@@ -34,6 +37,7 @@ public class GradeServiceImpl implements GradeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<GradeResponse> getAllGrades(Long userId) {
         return gradeRepository.findAllByCreatedBy_UserId(userId).stream()
                 .map(this::convertToResponse)
@@ -41,6 +45,7 @@ public class GradeServiceImpl implements GradeService {
     }
 
     @Override
+    @Transactional
     public GradeResponse updateGrade(Long id, GradeRequest request) {
         Grade grade = gradeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Grade not found"));
@@ -51,6 +56,7 @@ public class GradeServiceImpl implements GradeService {
     }
 
     @Override
+    @Transactional
     public void deleteGrade(Long id) {
         if (!gradeRepository.existsById(id)) {
             throw new RuntimeException("Grade not found");

@@ -31,6 +31,12 @@ public class LessonServiceImpl implements LessonService {
                 .lessonTitle(request.getLessonTitle())
                 .lessonContent(request.getLessonContent())
                 .lessonObjectives(request.getLessonObjectives())
+                .gradeLevel(request.getGradeLevel())
+                .lessonType(request.getLessonType())
+                .durationMinutes(request.getDurationMinutes())
+                .methodology(request.getMethodology())
+                .materials(request.getMaterials())
+                .homework(request.getHomework())
                 .build();
 
         if (request.getGradeId() != null) {
@@ -51,6 +57,12 @@ public class LessonServiceImpl implements LessonService {
         lesson.setLessonTitle(request.getLessonTitle());
         lesson.setLessonContent(request.getLessonContent());
         lesson.setLessonObjectives(request.getLessonObjectives());
+        lesson.setGradeLevel(request.getGradeLevel());
+        lesson.setLessonType(request.getLessonType());
+        lesson.setDurationMinutes(request.getDurationMinutes());
+        lesson.setMethodology(request.getMethodology());
+        lesson.setMaterials(request.getMaterials());
+        lesson.setHomework(request.getHomework());
 
         if (request.getGradeId() != null) {
             Grade grade = gradeRepository.findById(request.getGradeId())
@@ -87,6 +99,14 @@ public class LessonServiceImpl implements LessonService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<LessonResponse> getAllLessons() {
+        return lessonRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     private LessonResponse toResponse(Lesson lesson) {
         return LessonResponse.builder()
                 .lessonId(lesson.getLessonId())
@@ -96,6 +116,12 @@ public class LessonServiceImpl implements LessonService {
                 .gradeId(lesson.getGrade() != null ? lesson.getGrade().getGradeId() : null)
                 .createdAt(lesson.getCreatedAt())
                 .updatedAt(lesson.getUpdatedAt())
+                .gradeLevel(lesson.getGradeLevel())
+                .lessonType(lesson.getLessonType())
+                .durationMinutes(lesson.getDurationMinutes())
+                .methodology(lesson.getMethodology())
+                .materials(lesson.getMaterials())
+                .homework(lesson.getHomework())
                 .build();
     }
 }

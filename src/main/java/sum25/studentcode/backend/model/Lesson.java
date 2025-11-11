@@ -39,6 +39,24 @@ public class Lesson {
     @Column(name = "lesson_objectives")
     private String lessonObjectives;
     
+    @Column(name = "grade_level")
+    private Integer gradeLevel;
+
+    @Column(name = "lesson_type")
+    private String lessonType;
+
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    @Column(name = "methodology")
+    private String methodology;
+
+    @Column(name = "materials")
+    private String materials;
+
+    @Column(name = "homework")
+    private String homework;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;

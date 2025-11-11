@@ -17,4 +17,11 @@ public class LessonResponse {
     private Long gradeId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private Integer gradeLevel;
+    private String lessonType;
+    private Integer durationMinutes;
+    private String methodology;
+    private String materials;
+    private String homework;
 }

@@ -34,6 +34,12 @@ public class LessonController {
         return lessonService.getAllLessons(userId);
     }
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    public List<LessonResponse> getAllLessons() {
+        return lessonService.getAllLessons();
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER')")
     public LessonResponse updateLesson(@PathVariable Long id, @RequestBody LessonRequest request) {
