@@ -38,9 +38,6 @@ public class Lesson {
     @Lob
     @Column(name = "lesson_objectives")
     private String lessonObjectives;
-    
-    @Column(name = "grade_level")
-    private Integer gradeLevel;
 
     @Column(name = "lesson_type")
     private String lessonType;
@@ -57,6 +54,13 @@ public class Lesson {
     @Column(name = "homework")
     private String homework;
 
+    @Column(name = "is_public")
+    @Builder.Default
+    private Boolean isPublic = false; // Học viên có thấy không?
+
+    @Column(name = "thumbnail_url")
+    private String thumbnailUrl; //Link url image
+
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -65,12 +69,15 @@ public class Lesson {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @ManyToMany(mappedBy = "lessons", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<LessonCollection> collections = new ArrayList<>();
+
     @OneToMany(mappedBy = "lesson", fetch = FetchType.LAZY)
     private List<Questions> questions = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "user_id")
     private User createdBy;
-
 
 }

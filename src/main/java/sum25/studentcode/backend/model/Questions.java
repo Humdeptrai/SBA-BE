@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import sum25.studentcode.backend.modules.Questions.dto.request.QuestionsRequest;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -45,6 +46,9 @@ public class Questions {
     
     @Lob
     private String explanation;
+
+    @Column(name = "knowledge_level", nullable = false, length = 20)
+    private QuestionsRequest.KnowledgeLevel knowledgeLevel;  // Enum: RECALL, UNDERSTAND, APPLY, ANALYZE
 
     @Column(name = "is_active")
     private Boolean isActive = true;

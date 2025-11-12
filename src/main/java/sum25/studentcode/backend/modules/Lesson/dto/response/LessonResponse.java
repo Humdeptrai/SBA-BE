@@ -14,6 +14,7 @@ public class LessonResponse {
     private String lessonTitle;
     private String lessonContent;
     private String lessonObjectives;
+    private String gradeName;
     private Long gradeId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -24,4 +25,6 @@ public class LessonResponse {
     private String methodology;
     private String materials;
     private String homework;
+
+    private Long lessonFileId;
 }

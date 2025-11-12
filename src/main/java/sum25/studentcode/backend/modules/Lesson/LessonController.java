@@ -3,9 +3,16 @@ package sum25.studentcode.backend.modules.Lesson;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sum25.studentcode.backend.modules.Lesson.dto.request.LessonRequest;
 import sum25.studentcode.backend.modules.Lesson.dto.response.LessonResponse;
+import sum25.studentcode.backend.model.LessonFile;
+import sum25.studentcode.backend.modules.Lesson.service.LessonFileService;
 import sum25.studentcode.backend.modules.Lesson.service.LessonService;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 
@@ -15,6 +22,7 @@ import java.util.List;
 public class LessonController {
 
     private final LessonService lessonService;
+    private final LessonFileService lessonFileService;
 
     @PostMapping
     @PreAuthorize("hasRole('TEACHER')")
@@ -50,5 +58,47 @@ public class LessonController {
     @PreAuthorize("hasRole('TEACHER')")
     public void deleteLesson(@PathVariable Long id) {
         lessonService.deleteLesson(id);
+    }
+
+    @PostMapping("/{lessonId}/upload")
+    @PreAuthorize("hasRole('TEACHER')")
+    public void uploadFile(@PathVariable Long lessonId, @RequestParam("file") MultipartFile file) {
+        lessonFileService.saveFile(lessonId.toString(), file);
+    }
+
+    @GetMapping("/{lessonId}/download")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    public List<LessonFile> downloadFiles(@PathVariable Long lessonId) {
+        return lessonFileService.getFilesByLessonId(lessonId.toString());
+    }
+
+    @GetMapping("/{lessonId}/files")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    public List<LessonFile> getFilesByLesson(@PathVariable Long lessonId) {
+        return lessonFileService.getFilesByLessonId(lessonId.toString());
+    }
+
+    @GetMapping("/files/{fileId}/content")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    public ResponseEntity<byte[]> downloadFileContent(@PathVariable String fileId) {
+        LessonFile file = lessonFileService.getFileById(fileId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(file.getFileType()));
+        headers.setContentDispositionFormData("inline", file.getFileName());
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(file.getData());
+    }
+
+    @DeleteMapping("/files/{fileId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public void deleteFile(@PathVariable String fileId) {
+        lessonFileService.deleteFile(fileId);
+    }
+
+    @DeleteMapping("/{lessonId}/files/{fileId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public void deleteFileByLesson(@PathVariable Long lessonId, @PathVariable String fileId) {
+        lessonFileService.deleteFileByLessonIdAndFileId(lessonId.toString(), fileId);
     }
 }

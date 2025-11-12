@@ -1,5 +1,6 @@
 package sum25.studentcode.backend.modules.StudentPractice.repository;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -24,9 +25,10 @@ public interface StudentPracticeRepository extends JpaRepository<StudentPractice
     List<StudentPractice> findWithSessionByStatus(StudentPractice.PracticeStatus status);
 
     // StudentPracticeRepository.java
-    Optional<StudentPractice> findByPracticeSessionAndStudent(PracticeSession practiceSession, User student);
+    Optional<StudentPractice> findTopByPracticeSessionAndStudentOrderByAttemptNumberDesc(PracticeSession practiceSession, User student);
 
 
     List<StudentPractice> findAllByStudent_UserId(Long studentUserId);
-}
 
+    List<StudentPractice> findByStatus(StudentPractice.PracticeStatus status, Sort sort);
+}

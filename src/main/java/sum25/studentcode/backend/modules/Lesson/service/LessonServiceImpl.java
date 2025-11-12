@@ -6,9 +6,11 @@ import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.model.Grade;
 import sum25.studentcode.backend.model.Lesson;
 import sum25.studentcode.backend.modules.Lesson.dto.request.LessonRequest;
+import sum25.studentcode.backend.modules.Lesson.dto.response.LessonGradeResponse;
 import sum25.studentcode.backend.modules.Lesson.dto.response.LessonResponse;
 import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
 import sum25.studentcode.backend.modules.Grade.repository.GradeRepository;
+import sum25.studentcode.backend.modules.Auth.service.UserService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +22,7 @@ public class LessonServiceImpl implements LessonService {
 
     private final LessonRepository lessonRepository;
     private final GradeRepository gradeRepository;
+    private final UserService userService;
 
     @Override
     public LessonResponse createLesson(LessonRequest request) {
@@ -31,12 +34,14 @@ public class LessonServiceImpl implements LessonService {
                 .lessonTitle(request.getLessonTitle())
                 .lessonContent(request.getLessonContent())
                 .lessonObjectives(request.getLessonObjectives())
-                .gradeLevel(request.getGradeLevel())
                 .lessonType(request.getLessonType())
+                .grade(request.getGradeId() != null ? gradeRepository.findById(request.getGradeId())
+                        .orElseThrow(() -> new RuntimeException("Grade not found")) : null)
                 .durationMinutes(request.getDurationMinutes())
                 .methodology(request.getMethodology())
                 .materials(request.getMaterials())
                 .homework(request.getHomework())
+                .createdBy(userService.getCurrentUser())
                 .build();
 
         if (request.getGradeId() != null) {
@@ -55,9 +60,10 @@ public class LessonServiceImpl implements LessonService {
                 .orElseThrow(() -> new RuntimeException("Lesson not found"));
 
         lesson.setLessonTitle(request.getLessonTitle());
+        lesson.setGrade(request.getGradeId() != null ? gradeRepository.findById(request.getGradeId())
+                .orElseThrow(() -> new RuntimeException("Grade not found")) : null);
         lesson.setLessonContent(request.getLessonContent());
         lesson.setLessonObjectives(request.getLessonObjectives());
-        lesson.setGradeLevel(request.getGradeLevel());
         lesson.setLessonType(request.getLessonType());
         lesson.setDurationMinutes(request.getDurationMinutes());
         lesson.setMethodology(request.getMethodology());
@@ -107,16 +113,21 @@ public class LessonServiceImpl implements LessonService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public LessonGradeResponse getLessonForGrade(Long id) {
+        return lessonRepository.findByGrade_GradeId(id);
+    }
+
     private LessonResponse toResponse(Lesson lesson) {
         return LessonResponse.builder()
                 .lessonId(lesson.getLessonId())
                 .lessonTitle(lesson.getLessonTitle())
                 .lessonContent(lesson.getLessonContent())
                 .lessonObjectives(lesson.getLessonObjectives())
-                .gradeId(lesson.getGrade() != null ? lesson.getGrade().getGradeId() : null)
+                .gradeName(lesson.getGrade() != null ? lesson.getGrade().getGradeLevel() : null)
                 .createdAt(lesson.getCreatedAt())
+                .gradeId(lesson.getGrade().getGradeId() != null ? lesson.getGrade().getGradeId() : null)
                 .updatedAt(lesson.getUpdatedAt())
-                .gradeLevel(lesson.getGradeLevel())
                 .lessonType(lesson.getLessonType())
                 .durationMinutes(lesson.getDurationMinutes())
                 .methodology(lesson.getMethodology())

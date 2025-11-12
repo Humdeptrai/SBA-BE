@@ -46,6 +46,9 @@ public class StudentPractice {
     @Column(name = "exam_code")
     private String examCode; // để truy xuất nhanh
 
+    @Column(name = "attempt_number")
+    private Integer attemptNumber = 1; // số lần thi
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private PracticeStatus status; // ✅ dùng enum thay vì String

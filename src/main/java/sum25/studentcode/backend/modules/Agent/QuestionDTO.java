@@ -1,12 +1,19 @@
 package sum25.studentcode.backend.modules.Agent;
 
+import lombok.Getter;
+import lombok.Setter;
+import sum25.studentcode.backend.modules.Questions.dto.request.QuestionsRequest;
+
 import java.util.Map;
 
+@Getter
+@Setter
 public class QuestionDTO {
     private int questionId;
     private String question;
     private Map<String, String> options;
     private String correctAnswer;
+    private QuestionsRequest.KnowledgeLevel knowledgeLevel;
     private String explanation;
 
     public int getQuestionId() {

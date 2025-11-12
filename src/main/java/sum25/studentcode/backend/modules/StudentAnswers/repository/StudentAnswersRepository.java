@@ -29,9 +29,19 @@ public interface StudentAnswersRepository extends JpaRepository<StudentAnswers, 
         WHERE sa2.studentPractice.practiceId = sa.studentPractice.practiceId
           AND sa2.question.questionId = sa.question.questionId
     )
-    AND sa.studentPractice.practiceId = :practiceId
-""")
+    """)
     List<StudentAnswers> findLatestAnswersByPracticeId(@Param("practiceId") Long practiceId);
 
-
+    @Query("""
+        SELECT u.username, ps.sessionName, q.questionText, o.optionText, sa.isCorrect
+        FROM StudentAnswers sa
+        JOIN sa.studentPractice sp
+        JOIN sp.practiceSession ps
+        JOIN sp.student u
+        JOIN sa.question q
+        LEFT JOIN Options o ON o.optionId = sa.selectedOptionId
+        WHERE (:sessionId IS NULL OR ps.sessionCode = :sessionId)
+        ORDER BY u.username, ps.sessionName, q.questionText
+        """)
+    List<Object[]> findStudentAnswerDetails(@Param("sessionId") String sessionId);
 }

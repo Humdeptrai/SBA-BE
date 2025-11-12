@@ -6,6 +6,8 @@ import sum25.studentcode.backend.modules.StudentPractice.dto.request.TeacherGrad
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.PracticeQuestionResponse;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentEnrollResponse;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentPracticeResponse;
+import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentRankingResponse;
+import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentAnswerDetailResponse;
 
 import java.util.List;
 
@@ -20,4 +22,8 @@ public interface StudentPracticeService {
 
 
     List<StudentPracticeResponse> getStudentPracticeRecords();
+
+    List<StudentRankingResponse> getRankings(String order);
+
+    List<StudentAnswerDetailResponse> getStudentAnswersDetails(String sessonCode);
 }

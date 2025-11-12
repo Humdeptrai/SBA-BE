@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.model.Grade;
+import sum25.studentcode.backend.modules.Auth.service.UserService;
 import sum25.studentcode.backend.modules.Grade.dto.request.GradeRequest;
 import sum25.studentcode.backend.modules.Grade.dto.response.GradeResponse;
 import sum25.studentcode.backend.modules.Grade.repository.GradeRepository;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 public class GradeServiceImpl implements GradeService {
 
     private final GradeRepository gradeRepository;
+    private final UserService userService;
 
     @Override
     @Transactional
@@ -23,6 +25,7 @@ public class GradeServiceImpl implements GradeService {
         Grade grade = Grade.builder()
                 .gradeLevel(request.getGradeLevel())
                 .description(request.getDescription())
+                .createdBy(userService.getCurrentUser())
                 .build();
         grade = gradeRepository.save(grade);
         return convertToResponse(grade);

@@ -47,9 +47,8 @@ public class StudentAnswersController {
 
     @PostMapping("/save-draft")
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
-    public String saveDraftAnswer(@RequestBody StudentAnswersRequest request) {
+    public void saveDraftAnswer(@RequestBody StudentAnswersRequest request) {
         studentAnswersService.saveDraftAnswer(request);
-        return "Đã lưu đáp án tạm";
     }
 
     @GetMapping("/practice/{practiceId}")

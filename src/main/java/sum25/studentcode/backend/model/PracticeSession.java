@@ -66,6 +66,9 @@ public class PracticeSession {
     @JoinColumn(name = "matrix_id", nullable = false)
     private Matrix matrix;
 
+    @Column(name = "attempt_limit")
+    private int attemptLimit = 1; // số lần được phép thi
+
     @Column(name = "current_participants")
     private Integer currentParticipants = 0; // đếm người đã tham gia
 
