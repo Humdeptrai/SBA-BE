@@ -11,6 +11,7 @@ import sum25.studentcode.backend.modules.Grade.repository.GradeRepository;
 import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
 import sum25.studentcode.backend.modules.Level.repository.LevelRepository;
 import sum25.studentcode.backend.modules.QuestionType.repository.QuestionTypeRepository;
+import sum25.studentcode.backend.modules.Questions.dto.request.QuestionsRequest;
 import sum25.studentcode.backend.modules.Questions.repository.QuestionsRepository;
 import sum25.studentcode.backend.modules.Options.repository.OptionsRepository;
 import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
@@ -18,9 +19,12 @@ import sum25.studentcode.backend.modules.PracticeSession.repository.PracticeSess
 import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
 import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
 import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
+import sum25.studentcode.backend.modules.Lesson.repository.LessonCollectionRepository;
+import sum25.studentcode.backend.modules.Lesson.repository.LessonFileRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -38,6 +42,8 @@ public class DataSeeder implements CommandLineRunner {
     private final StudentPracticeRepository studentPracticeRepository;
     private final StudentAnswersRepository studentAnswersRepository;
     private final WalletRepository walletRepository;
+    private final LessonCollectionRepository lessonCollectionRepository;
+    private final LessonFileRepository lessonFileRepository;
     @Override
     public void run(String... args) throws Exception {
         PasswordEncoder encoder = new BCryptPasswordEncoder();
@@ -88,6 +94,33 @@ public class DataSeeder implements CommandLineRunner {
                             .lessonTitle("English Basics")
                             .lessonContent("Introduction to English vocabulary and grammar")
                             .lessonObjectives("Help students understand basic English concepts")
+                            .thumbnailUrl("https://example.com/thumbnail.jpg")
+                            .build()
+            );
+        }
+
+        if (lessonCollectionRepository.count() == 0) {
+            User teacher = userRepository.findByUsername("teacher").orElseThrow();
+            Lesson lesson = lessonRepository.findAll().get(0);
+            lessonCollectionRepository.save(
+                    LessonCollection.builder()
+                            .collectionName("Unit 1: My School")
+                            .description("Basic English lessons for beginners")
+                            .createdBy(teacher)
+                            .lessons(List.of(lesson))
+                            .build()
+            );
+        }
+
+        if (lessonFileRepository.count() == 0) {
+            Lesson lesson = lessonRepository.findAll().get(0);
+            lessonFileRepository.save(
+                    LessonFile.builder()
+                            .lessonId(lesson.getLessonId().toString())
+                            .fileName("sample.pdf")
+                            .fileType("application/pdf")
+                            .data(null) // No data for seeding
+                            .displayOrder(1)
                             .build()
             );
         }
@@ -134,6 +167,7 @@ public class DataSeeder implements CommandLineRunner {
                     .questionType(mcq)
                     .questionText("What is the synonym of 'happy'?")
                     .correctAnswer("joyful")
+                    .knowledgeLevel(QuestionsRequest.KnowledgeLevel.APPLY)
                     .explanation("Basic vocabulary")
                     .build();
             questionsRepository.save(q1);
@@ -144,6 +178,7 @@ public class DataSeeder implements CommandLineRunner {
                     .questionType(mcq)
                     .questionText("Choose the correct form: She ___ to school.")
                     .correctAnswer("goes")
+                    .knowledgeLevel(QuestionsRequest.KnowledgeLevel.RECALL)
                     .explanation("Present simple tense")
                     .build();
             questionsRepository.save(q2);

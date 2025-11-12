@@ -5,14 +5,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sum25.studentcode.backend.model.StudentPractice;
+import sum25.studentcode.backend.model.User;
+import sum25.studentcode.backend.modules.Auth.service.UserService;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.StudentEnrollRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.TeacherGradeRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.PracticeQuestionResponse;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentEnrollResponse;
 import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentPracticeResponse;
+import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentRankingResponse;
 import sum25.studentcode.backend.modules.StudentPractice.service.StudentPracticeService;
 
 import java.util.List;
+import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentAnswerDetailResponse;
 
 @RestController
 @RequestMapping("/api/student-practices")
@@ -20,6 +24,7 @@ import java.util.List;
 public class StudentPracticeController {
 
     private final StudentPracticeService studentPracticeService;
+    private final UserService userService;;
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
@@ -31,6 +36,12 @@ public class StudentPracticeController {
     @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     public List<StudentPracticeResponse> getAllStudentPractices() {
         return studentPracticeService.getAllStudentPractices();
+    }
+
+    @GetMapping("/students")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    public List<StudentPracticeResponse> getAllByStudents() {
+        return studentPracticeService.getStudentPracticeRecords();
     }
 
     /** 🧠 Học sinh nộp bài (tự động chấm điểm) */
@@ -70,9 +81,22 @@ public class StudentPracticeController {
         return studentPracticeService.getQuestionsForPractice(practiceId);
     }
 
+    @GetMapping("/rankings")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    public List<StudentRankingResponse> getRankings(@RequestParam(defaultValue = "desc") String order) {
+        return studentPracticeService.getRankings(order);
+    }
+
+
     @GetMapping("/student/records")
-    @PreAuthorize("hasRole('STUDENT')")
-    public List<StudentPracticeResponse> getStudentPracticeRecords() {
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    public List<StudentPracticeResponse> getStudentRecord() {
         return studentPracticeService.getStudentPracticeRecords();
+    }
+
+    @GetMapping("/answers")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    public List<StudentAnswerDetailResponse> getStudentAnswersDetails(@RequestParam(required = false) String sessonCode) {
+        return studentPracticeService.getStudentAnswersDetails(sessonCode);
     }
 }

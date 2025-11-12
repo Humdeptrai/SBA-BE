@@ -1,6 +1,7 @@
 package sum25.studentcode.backend.modules.StudentPractice.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -15,9 +16,7 @@ import sum25.studentcode.backend.modules.PracticeSession.repository.PracticeSess
 import sum25.studentcode.backend.modules.StudentAnswers.repository.StudentAnswersRepository;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.StudentEnrollRequest;
 import sum25.studentcode.backend.modules.StudentPractice.dto.request.TeacherGradeRequest;
-import sum25.studentcode.backend.modules.StudentPractice.dto.response.PracticeQuestionResponse;
-import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentEnrollResponse;
-import sum25.studentcode.backend.modules.StudentPractice.dto.response.StudentPracticeResponse;
+import sum25.studentcode.backend.modules.StudentPractice.dto.response.*;
 import sum25.studentcode.backend.modules.StudentPractice.repository.StudentPracticeRepository;
 
 import java.math.BigDecimal;
@@ -223,6 +222,7 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
     }
 
     @Override
+    @Transactional
     public StudentEnrollResponse enrollStudent(StudentEnrollRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
@@ -257,25 +257,40 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
         }
 
         Optional<StudentPractice> existingPractice =
-                studentPracticeRepository.findByPracticeSessionAndStudent(session, student);
+                studentPracticeRepository.findTopByPracticeSessionAndStudentOrderByAttemptNumberDesc(session, student);
 
         StudentPractice practice;
 
         if (existingPractice.isPresent()) {
-            practice = existingPractice.get();
-
-            if (practice.getStatus() == StudentPractice.PracticeStatus.SUBMITTED) {
-                throw new ApiException("ALREADY_SUBMITTED",
-                        "Bạn đã nộp bài thi này rồi. Không thể làm lại.", 400);
+            StudentPractice latest = existingPractice.get();
+            if (latest.getStatus() == StudentPractice.PracticeStatus.SUBMITTED) {
+                if (latest.getAttemptNumber() >= session.getAttemptLimit()) {
+                    throw new ApiException("MAX_ATTEMPTS_REACHED", "Bạn đã đạt giới hạn số lần thi cho buổi luyện tập này.", 400);
+                }
+                // Create new attempt
+                practice = StudentPractice.builder()
+                        .practiceSession(session)
+                        .student(student)
+                        .status(StudentPractice.PracticeStatus.IN_PROGRESS)
+                        .perTime(now)
+                        .attemptNumber(latest.getAttemptNumber() + 1)
+                        .examCode(request.getSessionCode())
+                        .build();
+                studentPracticeRepository.save(practice);
+                System.out.println("[ENROLL] New attempt for student. PracticeId: " + practice.getPracticeId() + ", Attempt: " + practice.getAttemptNumber());
+            } else {
+                // Re-entering existing in-progress attempt
+                practice = latest;
+                System.out.println("[ENROLL] Student re-entering exam. PracticeId: " + practice.getPracticeId());
             }
-
-            System.out.println("[ENROLL] Student re-entering exam. PracticeId: " + practice.getPracticeId());
         } else {
             practice = StudentPractice.builder()
                     .practiceSession(session)
                     .student(student)
                     .status(StudentPractice.PracticeStatus.IN_PROGRESS)
-                    .perTime(now) // Lưu thời điểm bắt đầu làm
+                    .perTime(now)
+                    .attemptNumber(1)
+                    .examCode(request.getSessionCode())
                     .build();
 
             studentPracticeRepository.save(practice);
@@ -297,6 +312,39 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
                 .build();
     }
 
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StudentRankingResponse> getRankings(String order) {
+        Sort sort = Sort.by("asc".equals(order) ? Sort.Direction.ASC : Sort.Direction.DESC, "totalScore");
+        List<StudentPractice> practices = studentPracticeRepository.findByStatus(StudentPractice.PracticeStatus.SUBMITTED, sort);
+        return practices.stream()
+                .map(p -> {
+                    StudentRankingResponse r = new StudentRankingResponse();
+                    r.setStudentName(p.getStudent().getUsername());
+                    r.setScore(p.getTotalScore().doubleValue());
+                    r.setSubmitTime(p.getSubmitTime());
+                    return r;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<StudentAnswerDetailResponse> getStudentAnswersDetails(String sessonCode) {
+        List<Object[]> results = studentAnswersRepository.findStudentAnswerDetails(sessonCode);
+        return results.stream()
+                .map(row -> {
+                    StudentAnswerDetailResponse r = new StudentAnswerDetailResponse();
+                    r.setStudentName((String) row[0]);
+                    r.setSessionName((String) row[1]);
+                    r.setQuestionText((String) row[2]);
+                    r.setAnswerText((String) row[3]);
+                    r.setIsCorrect((Boolean) row[4]);
+                    return r;
+                })
+                .collect(Collectors.toList());
+    }
 
     private BigDecimal calculateTotalScore(StudentPractice practice) {
         if (practice.getStudentAnswers() == null || practice.getStudentAnswers().isEmpty())

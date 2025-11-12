@@ -6,7 +6,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import sum25.studentcode.backend.model.*;
+import sum25.studentcode.backend.model.Lesson;
+import sum25.studentcode.backend.model.Level;
+import sum25.studentcode.backend.model.QuestionType;
+import sum25.studentcode.backend.model.Questions;
+import sum25.studentcode.backend.modules.Auth.service.UserService;
 import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
 import sum25.studentcode.backend.modules.Level.repository.LevelRepository;
 import sum25.studentcode.backend.modules.MatrixQuestion.repository.MatrixQuestionRepository;
@@ -31,7 +35,7 @@ public class QuestionsServiceImpl implements QuestionsService {
     private final QuestionTypeRepository questionTypeRepository;
     private final OptionsRepository optionsRepository;
     private final MatrixQuestionRepository matrixQuestionRepository;
-
+    private final UserService userService;
 
     @Override
     public QuestionsResponse createQuestion(QuestionsRequest request) {
@@ -48,6 +52,8 @@ public class QuestionsServiceImpl implements QuestionsService {
                 .explanation(request.getExplanation())
                 .lesson(lesson)
                 .level(level)
+                .knowledgeLevel(request.getKnowledgeLevel())
+                .createdBy(userService.getCurrentUser())
                 .questionType(questionType)
                 .build();
 
@@ -159,10 +165,12 @@ public class QuestionsServiceImpl implements QuestionsService {
         response.setCorrectAnswer(question.getCorrectAnswer());
         response.setExplanation(question.getExplanation());
         response.setCreatedAt(question.getCreatedAt());
+        response.setKnowledgeLevel(question.getKnowledgeLevel());
         response.setUpdatedAt(question.getUpdatedAt());
         if (question.getLesson() != null) response.setLessonId(question.getLesson().getLessonId());
         if (question.getLevel() != null) response.setLevelId(question.getLevel().getLevelId());
-        if (question.getQuestionType() != null) response.setQuestionTypeId(question.getQuestionType().getQuestionTypeId());
+        if (question.getQuestionType() != null)
+            response.setQuestionTypeId(question.getQuestionType().getQuestionTypeId());
         return response;
     }
 }

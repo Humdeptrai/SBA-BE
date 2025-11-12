@@ -10,6 +10,7 @@ import sum25.studentcode.backend.model.Matrix;
 import sum25.studentcode.backend.model.PracticeSession;
 import sum25.studentcode.backend.model.User;
 import sum25.studentcode.backend.modules.Auth.repository.UserRepository;
+import sum25.studentcode.backend.modules.Auth.service.UserService;
 import sum25.studentcode.backend.modules.Lesson.repository.LessonRepository;
 import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
 import sum25.studentcode.backend.modules.PracticeSession.dto.request.PracticeSessionRequest;
@@ -29,6 +30,7 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
     private final MatrixRepository matrixRepository;
     private final LessonRepository lessonRepository;
     private final UserRepository userRepository;
+    private final UserService userService;
 
     @Override
     public PracticeSessionResponse createPracticeSession(PracticeSessionRequest request) {
@@ -49,6 +51,7 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
                 .sessionName(request.getSessionName())
                 .description(request.getDescription())
                 .isActive(true)
+                .createdBy(userService.getCurrentUser())
                 .maxParticipants(request.getMaxParticipants() != null ? request.getMaxParticipants() : 50)
                 .currentParticipants(0)
                 .examDate(request.getExamDate())
@@ -78,10 +81,15 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
     @Override
     public List<PracticeSessionStudentResponse> getAllPracticeSessionsForStudents() {
         List<PracticeSession> list = practiceSessionRepository.findAll();
+
+        List<Long> enrolledSessionIds = practiceSessionRepository.findSessionIdsByStudentId(userService.getCurrentUser().getUserId());
+
         if (list.isEmpty())
             throw new ApiException("EMPTY_LIST", "Chưa có buổi luyện tập nào.", 404);
 
-        return list.stream().map(this::convertToStudentResponse).collect(Collectors.toList());
+        return list.stream()
+                .map(session -> convertToStudentResponse(session, enrolledSessionIds.contains(session.getSessionId())))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -133,6 +141,11 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         practiceSessionRepository.deleteById(id);
     }
 
+//    @Override
+//    public List<Long> getEnrolledSessionIdsForStudent() {
+//        User user = userService.getCurrentUser();
+//        return practiceSessionRepository.findSessionIdsByStudentId(user.getUserId());
+//    }
 
 
     private PracticeSessionResponse convertToResponse(PracticeSession entity) {
@@ -155,7 +168,7 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         return res;
     }
 
-    private PracticeSessionStudentResponse convertToStudentResponse(PracticeSession entity) {
+    private PracticeSessionStudentResponse convertToStudentResponse(PracticeSession entity, boolean isEnrolled) {
         PracticeSessionStudentResponse res = new PracticeSessionStudentResponse();
         res.setSessionId(entity.getSessionId());
         res.setTeacherId(entity.getTeacher().getUserId());
@@ -167,6 +180,7 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         res.setDurationMinutes(entity.getDurationMinutes());
         res.setCreatedAt(entity.getCreatedAt());
         res.setUpdatedAt(entity.getUpdatedAt());
+        res.setEnrolled(isEnrolled);
         return res;
     }
 }

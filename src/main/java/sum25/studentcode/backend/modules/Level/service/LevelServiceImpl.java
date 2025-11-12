@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.core.exception.ApiException;
 import sum25.studentcode.backend.model.Level;
+import sum25.studentcode.backend.model.User;
+import sum25.studentcode.backend.modules.Auth.service.UserService;
 import sum25.studentcode.backend.modules.Level.dto.request.LevelRequest;
 import sum25.studentcode.backend.modules.Level.dto.response.LevelResponse;
 import sum25.studentcode.backend.modules.Level.repository.LevelRepository;
@@ -19,6 +21,7 @@ public class LevelServiceImpl implements LevelService {
 
     private final LevelRepository levelRepository;
 
+    private final UserService userService;
     @Override
     public LevelResponse createLevel(LevelRequest request) {
         // ✅ Kiểm tra trùng tên
@@ -33,10 +36,12 @@ public class LevelServiceImpl implements LevelService {
         // ✅ Kiểm tra điểm hợp lệ
         validateDifficultyScore(request.getDifficultyScore());
 
+        User user = userService.getCurrentUser();
         Level level = Level.builder()
                 .levelName(request.getLevelName())
                 .difficultyScore(request.getDifficultyScore())
                 .description(request.getDescription())
+                .createdBy(user)
                 .build();
 
         levelRepository.save(level);

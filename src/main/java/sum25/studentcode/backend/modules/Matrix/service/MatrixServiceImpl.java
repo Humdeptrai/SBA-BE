@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sum25.studentcode.backend.core.exception.ApiException;
 import sum25.studentcode.backend.model.*;
+import sum25.studentcode.backend.modules.Auth.service.UserService;
 import sum25.studentcode.backend.modules.Matrix.dto.request.MatrixRequest;
 import sum25.studentcode.backend.modules.Matrix.dto.response.MatrixResponse;
 import sum25.studentcode.backend.modules.Matrix.repository.MatrixRepository;
@@ -25,6 +26,8 @@ public class MatrixServiceImpl implements MatrixService {
     private final MatrixRepository matrixRepository;
     private final MatrixQuestionRepository matrixQuestionRepository;
 
+    private final UserService userService;
+
 
     @Override
     public MatrixResponse createMatrix(MatrixRequest request) {
@@ -34,10 +37,12 @@ public class MatrixServiceImpl implements MatrixService {
                 .sum();
         BigDecimal totalMarks = BigDecimal.valueOf(totalQuestions);
 
+        User user = userService.getCurrentUser();
         Matrix matrix = Matrix.builder()
                 .matrixName(request.getMatrixName())
                 .description(request.getDescription())
                 .totalQuestions(totalQuestions)
+                .createdBy(user)
                 .totalMarks(totalMarks)
                 .build();
 
