@@ -38,7 +38,7 @@ public interface StudentAnswersRepository extends JpaRepository<StudentAnswers, 
     """)
     List<StudentAnswers> findAllWithQuestions();
 
-
+@Query("""
         SELECT u.username, ps.sessionName, q.questionText, o.optionText, sa.isCorrect
         FROM StudentAnswers sa
         JOIN sa.studentPractice sp

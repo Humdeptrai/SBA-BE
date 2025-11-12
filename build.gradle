@@ -41,8 +41,17 @@ plugins {
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
         testRuntimeOnly 'com.h2database:h2:2.2.222'
         implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
+        runtimeOnly 'mysql:mysql-connector-j'
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        // Spring Boot Web
+        implementation 'org.springframework.boot:spring-boot-starter-web'
 
-        implementation 'org.postgresql:postgresql:42.6.0'
+        // Spring Boot JPA
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+        // MySQL Connector
+        runtimeOnly 'mysql:mysql-connector-j'
+//        implementation 'org.postgresql:postgresql:42.6.0'
 
         implementation 'com.paypal.sdk:rest-api-sdk:1.14.0'
 

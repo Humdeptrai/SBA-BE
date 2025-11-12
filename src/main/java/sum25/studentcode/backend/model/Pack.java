@@ -35,6 +35,7 @@ public class Pack {
 
     // Loại tiền tệ (ví dụ: VND)
     @Column(length = 3)
+    @Builder.Default
     private String currency = "VND";
 
     // Gói có đang hoạt động không
