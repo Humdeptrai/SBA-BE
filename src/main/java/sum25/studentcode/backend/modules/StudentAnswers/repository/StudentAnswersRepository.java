@@ -15,7 +15,6 @@ import java.util.Optional;
 public interface StudentAnswersRepository extends JpaRepository<StudentAnswers, Long> {
     List<StudentAnswers> findByStudentPractice_PracticeId(Long practiceId);
 
-    // ✅ Lấy tất cả đáp án của 1 practice
     List<StudentAnswers> findByStudentPractice(StudentPractice practice);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -33,7 +32,14 @@ public interface StudentAnswersRepository extends JpaRepository<StudentAnswers, 
     List<StudentAnswers> findLatestAnswersByPracticeId(@Param("practiceId") Long practiceId);
 
     @Query("""
-        SELECT u.username, ps.sessionName, q.questionText, o.optionText, sa.isCorrect, q.correctAnswer
+    SELECT sa FROM StudentAnswers sa
+    JOIN FETCH sa.question q
+    WHERE sa.isCorrect IS NOT NULL
+    """)
+    List<StudentAnswers> findAllWithQuestions();
+
+@Query("""
+        SELECT u.username, ps.sessionName, q.questionText, o.optionText, sa.isCorrect
         FROM StudentAnswers sa
         JOIN sa.studentPractice sp
         JOIN sp.practiceSession ps
