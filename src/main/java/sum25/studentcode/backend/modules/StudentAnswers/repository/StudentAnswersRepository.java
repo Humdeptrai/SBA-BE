@@ -10,7 +10,6 @@ import sum25.studentcode.backend.model.StudentAnswers;
 import sum25.studentcode.backend.model.StudentPractice;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface StudentAnswersRepository extends JpaRepository<StudentAnswers, Long> {
     List<StudentAnswers> findByStudentPractice_PracticeId(Long practiceId);
@@ -32,6 +31,13 @@ public interface StudentAnswersRepository extends JpaRepository<StudentAnswers, 
     AND sa.studentPractice.practiceId = :practiceId
 """)
     List<StudentAnswers> findLatestAnswersByPracticeId(@Param("practiceId") Long practiceId);
+
+    @Query("""
+    SELECT sa FROM StudentAnswers sa
+    JOIN FETCH sa.question q
+    WHERE sa.isCorrect IS NOT NULL
+    """)
+    List<StudentAnswers> findAllWithQuestions();
 
 
 }
