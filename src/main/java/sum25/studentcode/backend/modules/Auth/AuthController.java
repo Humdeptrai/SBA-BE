@@ -15,6 +15,7 @@ import sum25.studentcode.backend.modules.Auth.dto.request.LoginRequest;
 import sum25.studentcode.backend.modules.Auth.dto.request.RegisterRequest;
 import sum25.studentcode.backend.modules.Auth.dto.response.AuthResponse;
 import sum25.studentcode.backend.modules.Auth.dto.response.UserResponse;
+import sum25.studentcode.backend.modules.Auth.service.IUserService;
 import sum25.studentcode.backend.modules.Auth.service.UserService;
 import sum25.studentcode.backend.modules.Wallet.repository.WalletRepository;
 import sum25.studentcode.backend.security.jwt.JwtUtils;
@@ -27,7 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
+    private final IUserService userService;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final WalletRepository walletRepository;

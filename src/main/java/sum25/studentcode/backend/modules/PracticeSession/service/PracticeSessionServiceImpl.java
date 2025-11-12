@@ -56,6 +56,7 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
                 .currentParticipants(0)
                 .examDate(request.getExamDate())
                 .durationMinutes(request.getDurationMinutes())
+                .attemptLimit(request.getAttemptLimit() != null ? request.getAttemptLimit() : 1)
                 .build();
 
         session = practiceSessionRepository.save(session);
@@ -80,15 +81,21 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
 
     @Override
     public List<PracticeSessionStudentResponse> getAllPracticeSessionsForStudents() {
+        User currentUser = userService.getCurrentUser();
         List<PracticeSession> list = practiceSessionRepository.findAll();
 
-        List<Long> enrolledSessionIds = practiceSessionRepository.findSessionIdsByStudentId(userService.getCurrentUser().getUserId());
+        List<Long> enrolledSessionIds = practiceSessionRepository.findSessionIdsByStudentId(currentUser.getUserId());
 
         if (list.isEmpty())
             throw new ApiException("EMPTY_LIST", "Chưa có buổi luyện tập nào.", 404);
 
         return list.stream()
-                .map(session -> convertToStudentResponse(session, enrolledSessionIds.contains(session.getSessionId())))
+                .map(session -> {
+                    boolean isEnrolled = enrolledSessionIds.contains(session.getSessionId());
+                    int attemptsUsed = isEnrolled ? practiceSessionRepository.countAttemptsByStudentAndSession(currentUser.getUserId(), session.getSessionId()) : 0;
+                    int attemptLeft = session.getAttemptLimit() - attemptsUsed;
+                    return convertToStudentResponse(session, isEnrolled, attemptLeft, session.getAttemptLimit());
+                })
                 .collect(Collectors.toList());
     }
 
@@ -119,6 +126,9 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         session.setMaxParticipants(request.getMaxParticipants());
         session.setExamDate(request.getExamDate());
         session.setDurationMinutes(request.getDurationMinutes());
+        if (request.getAttemptLimit() != null) {
+            session.setAttemptLimit(request.getAttemptLimit());
+        }
 
         session = practiceSessionRepository.save(session);
         return convertToResponse(session);
@@ -163,12 +173,13 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         res.setCurrentParticipants(entity.getCurrentParticipants());
         res.setExamDate(entity.getExamDate());
         res.setDurationMinutes(entity.getDurationMinutes());
+        res.setAttemptLimit(entity.getAttemptLimit());
         res.setCreatedAt(entity.getCreatedAt());
         res.setUpdatedAt(entity.getUpdatedAt());
         return res;
     }
 
-    private PracticeSessionStudentResponse convertToStudentResponse(PracticeSession entity, boolean isEnrolled) {
+    private PracticeSessionStudentResponse convertToStudentResponse(PracticeSession entity, boolean isEnrolled, int attemptLeft, int attemptLimit) {
         PracticeSessionStudentResponse res = new PracticeSessionStudentResponse();
         res.setSessionId(entity.getSessionId());
         res.setTeacherId(entity.getTeacher().getUserId());
@@ -181,6 +192,8 @@ public class PracticeSessionServiceImpl implements PracticeSessionService {
         res.setCreatedAt(entity.getCreatedAt());
         res.setUpdatedAt(entity.getUpdatedAt());
         res.setEnrolled(isEnrolled);
+        res.setAttemptLeft(attemptLeft);
+        res.setAttemptLimit(attemptLimit);
         return res;
     }
 }

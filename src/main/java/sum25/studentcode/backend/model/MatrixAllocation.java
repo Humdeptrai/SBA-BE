@@ -44,7 +44,7 @@ public class MatrixAllocation {
      * Tương ứng: Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao
      */
     @Column(name = "knowledge_level", nullable = false, length = 20)
-    private String knowledgeLevel;  // Enum: RECALL, UNDERSTAND, APPLY, ANALYZE
+        private String knowledgeLevel;  // Enum: RECALL, UNDERSTAND, APPLY, ANALYZE
 
     /**
      * Tỉ lệ phần trăm (30, 50, 20, ...)

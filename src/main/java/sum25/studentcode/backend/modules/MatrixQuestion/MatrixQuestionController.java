@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sum25.studentcode.backend.modules.MatrixQuestion.dto.request.MatrixQuestionRequest;
+import sum25.studentcode.backend.modules.MatrixQuestion.dto.request.UpdateMarksRequest;
 import sum25.studentcode.backend.modules.MatrixQuestion.dto.response.MatrixQuestionWithOptionsResponse;
 import sum25.studentcode.backend.modules.MatrixQuestion.service.MatrixQuestionService;
 
@@ -59,5 +60,15 @@ public class MatrixQuestionController {
             @PathVariable Long matrixId
     ) {
         return matrixQuestionService.getQuestionsWithOptionsByMatrixId(matrixId);
+    }
+
+    /** ✅ Cập nhật điểm số (marks allocated) cho câu hỏi trong ma trận */
+    @PatchMapping("/{matrixQuestionId}/marks")
+    @PreAuthorize("hasRole('TEACHER')")
+    public MatrixQuestionWithOptionsResponse updateMarksAllocated(
+            @PathVariable Long matrixQuestionId,
+            @RequestBody UpdateMarksRequest request
+    ) {
+        return matrixQuestionService.updateMarksAllocated(matrixQuestionId, request.getMarksAllocated());
     }
 }

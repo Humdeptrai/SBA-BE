@@ -22,7 +22,6 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
 
     List<Lesson> findAllByCreatedBy_UserId(Long createdByUserId);
 
-    LessonGradeResponse findByGrade(Grade grade);
 
-    LessonGradeResponse findByGrade_GradeId(Long gradeGradeId);
+    List<Lesson> findAllByGrade_GradeId(Long gradeGradeId);
 }

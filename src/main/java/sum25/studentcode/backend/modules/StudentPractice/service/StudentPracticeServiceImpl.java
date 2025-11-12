@@ -242,18 +242,27 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
 
         ZoneId vnZone = ZoneId.of("Asia/Ho_Chi_Minh");
         LocalDateTime now = LocalDateTime.now(vnZone);
+
+        // Ensure start and end times are in VN timezone
         LocalDateTime start = session.getExamDate();
-        LocalDateTime end = start.plusMinutes(session.getDurationMinutes());
+        if (start == null) {
+            throw new ApiException("SESSION_TIME_INVALID", "Buổi luyện tập chưa có thời gian bắt đầu.", 400);
+        }
+
+        LocalDateTime end = start.plusMinutes(session.getDurationMinutes() != null ? session.getDurationMinutes() : 0);
 
         System.out.println("[ENROLL] Giờ hiện tại VN: " + now);
         System.out.println("[ENROLL] Giờ bắt đầu: " + start);
         System.out.println("[ENROLL] Giờ kết thúc: " + end);
+        System.out.println("[ENROLL] Now vs Start: " + now.compareTo(start));
+        System.out.println("[ENROLL] Now vs End: " + now.compareTo(end));
 
+        // Compare without timezone (both are LocalDateTime)
         if (now.isBefore(start)) {
-            throw new ApiException("SESSION_NOT_STARTED", "Bài thi chưa đến thời gian bắt đầu.", 400);
+            throw new ApiException("SESSION_NOT_STARTED", "Bài thi chưa đến thời gian bắt đầu. Giờ hiện tại: " + now + ", Giờ bắt đầu: " + start, 400);
         }
         if (now.isAfter(end)) {
-            throw new ApiException("SESSION_ENDED", "Bài thi đã kết thúc.", 400);
+            throw new ApiException("SESSION_ENDED", "Bài thi đã kết thúc. Giờ hiện tại: " + now + ", Giờ kết thúc: " + end, 400);
         }
 
         Optional<StudentPractice> existingPractice =
@@ -341,6 +350,7 @@ public class StudentPracticeServiceImpl implements StudentPracticeService {
                     r.setQuestionText((String) row[2]);
                     r.setAnswerText((String) row[3]);
                     r.setIsCorrect((Boolean) row[4]);
+                    r.setCorrectAnswer((String) row[5]);
                     return r;
                 })
                 .collect(Collectors.toList());

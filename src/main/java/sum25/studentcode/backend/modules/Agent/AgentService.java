@@ -94,6 +94,7 @@ public class AgentService implements IAgentService{
                 question.setQuestionText(questionDTO.getQuestion());
                 question.setCorrectAnswer(questionDTO.getCorrectAnswer());
                 question.setQuestionType(questionType);
+                question.setCreatedBy(user);
                 question.setKnowledgeLevel(questionDTO.getKnowledgeLevel());
 
                 question.setExplanation("" + questionDTO.getExplanation());

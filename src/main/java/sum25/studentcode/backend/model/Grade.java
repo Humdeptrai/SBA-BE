@@ -41,7 +41,7 @@ public class Grade {
     @OneToMany(mappedBy = "grade", fetch = FetchType.LAZY)
     private List<Lesson> lessons = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "created_by", referencedColumnName = "user_id")
     private User createdBy;
 }

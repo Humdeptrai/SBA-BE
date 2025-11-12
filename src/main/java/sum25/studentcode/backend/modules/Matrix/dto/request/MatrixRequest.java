@@ -7,7 +7,7 @@ import java.util.List;
 public class MatrixRequest {
     private String matrixName;
     private String description;
-    private String distribution;
+    private List<Allocate> allocates;
     private List<AgentResult> agentResult;
 
     @Data
@@ -16,8 +16,15 @@ public class MatrixRequest {
         private Long levelId;
         private String lessonName;
         private String levelName;
+        private String knowledge;
         private Integer requiredCount;
         private String questionIds;
         private Integer actualCount;
+    }
+
+    @Data
+    public static class Allocate{
+        private String allocateName;
+        private String percent;
     }
 }

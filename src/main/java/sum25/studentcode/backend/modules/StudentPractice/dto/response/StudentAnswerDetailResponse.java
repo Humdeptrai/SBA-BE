@@ -8,5 +8,6 @@ public class StudentAnswerDetailResponse {
     private String sessionName;
     private String questionText;
     private String answerText;
+    private String correctAnswer;
     private Boolean isCorrect;
 }

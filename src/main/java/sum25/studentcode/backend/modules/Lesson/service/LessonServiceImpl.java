@@ -114,10 +114,18 @@ public class LessonServiceImpl implements LessonService {
     }
 
     @Override
-    public LessonGradeResponse getLessonForGrade(Long id) {
-        return lessonRepository.findByGrade_GradeId(id);
+    public List<LessonGradeResponse> getLessonForGrade(Long id) {
+        return lessonRepository.findAllByGrade_GradeId(id).stream().map(
+                this::toGradeResponse
+        ).toList();
     }
 
+    private LessonGradeResponse toGradeResponse(Lesson lesson) {
+        return LessonGradeResponse.builder()
+                .lessonId(lesson.getLessonId())
+                .lessonTitle(lesson.getLessonTitle())
+                .build();
+    }
     private LessonResponse toResponse(Lesson lesson) {
         return LessonResponse.builder()
                 .lessonId(lesson.getLessonId())

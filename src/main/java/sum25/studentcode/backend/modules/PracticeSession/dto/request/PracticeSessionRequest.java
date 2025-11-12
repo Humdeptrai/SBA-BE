@@ -12,4 +12,5 @@ public class PracticeSessionRequest {
     private Integer maxParticipants;    // Giới hạn người tham gia
     private LocalDateTime examDate;     // Ngày giờ thi
     private Integer durationMinutes;    // Thời lượng thi
+    private Integer attemptLimit;       // Số lần được phép thi
 }

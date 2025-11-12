@@ -214,6 +214,7 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
     }
 
     @Override
+    @Transactional
     public MatrixQuestionWithOptionsResponse updateMatrixQuestion(Long id, MatrixQuestionRequest request) {
         MatrixQuestion matrixQuestion = matrixQuestionRepository.findById(id)
                 .orElseThrow(() -> new ApiException("MATRIX_QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi trong ma trận.", 404));
@@ -287,4 +288,47 @@ public class MatrixQuestionServiceImpl implements MatrixQuestionService {
         return res;
     }
 
+    @Override
+    @Transactional
+    public MatrixQuestionWithOptionsResponse updateMarksAllocated(Long matrixQuestionId, BigDecimal marksAllocated) {
+        MatrixQuestion matrixQuestion = matrixQuestionRepository.findById(matrixQuestionId)
+                .orElseThrow(() -> new ApiException("MATRIX_QUESTION_NOT_FOUND", "Không tìm thấy câu hỏi trong ma trận.", 404));
+
+        if (marksAllocated == null || marksAllocated.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ApiException("INVALID_MARKS", "Điểm số phải lớn hơn 0.", 400);
+        }
+
+        matrixQuestion.setMarksAllocated(marksAllocated);
+        matrixQuestionRepository.save(matrixQuestion);
+
+        return mapToResponseWithOptions(matrixQuestion);
+    }
+
+    private MatrixQuestionWithOptionsResponse mapToResponseWithOptions(MatrixQuestion matrixQuestion) {
+        MatrixQuestionWithOptionsResponse res = new MatrixQuestionWithOptionsResponse();
+        res.setMatrixQuestionId(matrixQuestion.getMatrixQuestionId());
+        res.setMatrixId(matrixQuestion.getMatrix().getMatrixId());
+        res.setMatrixName(matrixQuestion.getMatrix().getMatrixName());
+        res.setQuestionId(matrixQuestion.getQuestion().getQuestionId());
+        res.setQuestionText(matrixQuestion.getQuestion().getQuestionText());
+        res.setMarksAllocated(matrixQuestion.getMarksAllocated());
+
+        List<OptionsResponse> options = optionsRepository
+                .findByQuestion_QuestionId(matrixQuestion.getQuestion().getQuestionId())
+                .stream()
+                .map(o -> {
+                    OptionsResponse opt = new OptionsResponse();
+                    opt.setOptionId(o.getOptionId());
+                    opt.setQuestionId(o.getQuestion().getQuestionId());
+                    opt.setOptionText(o.getOptionText());
+                    opt.setIsCorrect(o.getIsCorrect());
+                    opt.setOptionOrder(o.getOptionOrder());
+                    opt.setCreatedAt(o.getCreatedAt());
+                    opt.setUpdatedAt(o.getUpdatedAt());
+                    return opt;
+                }).collect(Collectors.toList());
+
+        res.setOptions(options);
+        return res;
+    }
 }

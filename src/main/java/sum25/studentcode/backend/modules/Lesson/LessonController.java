@@ -5,6 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sum25.studentcode.backend.modules.Lesson.dto.request.LessonRequest;
+import sum25.studentcode.backend.modules.Lesson.dto.response.LessonGradeResponse;
 import sum25.studentcode.backend.modules.Lesson.dto.response.LessonResponse;
 import sum25.studentcode.backend.model.LessonFile;
 import sum25.studentcode.backend.modules.Lesson.service.LessonFileService;
@@ -100,5 +101,11 @@ public class LessonController {
     @PreAuthorize("hasRole('TEACHER')")
     public void deleteFileByLesson(@PathVariable Long lessonId, @PathVariable String fileId) {
         lessonFileService.deleteFileByLessonIdAndFileId(lessonId.toString(), fileId);
+    }
+
+    @GetMapping("/grade/{gradeId}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
+    public List<LessonGradeResponse> getLessonsByGrade(@PathVariable Long gradeId) {
+        return lessonService.getLessonForGrade(gradeId);
     }
 }

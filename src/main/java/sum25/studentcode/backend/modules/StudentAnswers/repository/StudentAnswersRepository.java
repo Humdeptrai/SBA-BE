@@ -33,7 +33,7 @@ public interface StudentAnswersRepository extends JpaRepository<StudentAnswers, 
     List<StudentAnswers> findLatestAnswersByPracticeId(@Param("practiceId") Long practiceId);
 
     @Query("""
-        SELECT u.username, ps.sessionName, q.questionText, o.optionText, sa.isCorrect
+        SELECT u.username, ps.sessionName, q.questionText, o.optionText, sa.isCorrect, q.correctAnswer
         FROM StudentAnswers sa
         JOIN sa.studentPractice sp
         JOIN sp.practiceSession ps

@@ -16,6 +16,8 @@ public class PracticeSessionStudentResponse {
     private Integer durationMinutes;
 //    private boolean isFinished;
     private boolean isEnrolled;
+    private int attemptLeft;
+    private int attemptLimit;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

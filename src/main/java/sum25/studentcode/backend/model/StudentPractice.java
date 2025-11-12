@@ -44,14 +44,14 @@ public class StudentPractice {
     private BigDecimal totalScore;
 
     @Column(name = "exam_code")
-    private String examCode; // để truy xuất nhanh
+    private String examCode;
 
     @Column(name = "attempt_number")
-    private Integer attemptNumber = 1; // số lần thi
+    private Integer attemptNumber = 1;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private PracticeStatus status; // ✅ dùng enum thay vì String
+    private PracticeStatus status;
 
     @CreationTimestamp
     @Column(name = "created_at")

@@ -18,6 +18,7 @@ public class PracticeSessionResponse {
     private Integer currentParticipants;
     private LocalDateTime examDate;
     private Integer durationMinutes;
+    private Integer attemptLimit;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -20,5 +20,5 @@ public interface LessonService {
 
     List<LessonResponse> getAllLessons();
 
-    LessonGradeResponse getLessonForGrade(Long id);
+    List<LessonGradeResponse> getLessonForGrade(Long id);
 }
